@@ -1,5 +1,7 @@
 import { StrictMode, useState } from 'react'
 import { createRoot } from 'react-dom/client'
+import { isSupabaseConfigured } from './lib/supabase'
+import { requestPasswordReset, signIn, signUp } from './services/auth'
 import './styles.css'
 
 type Lead = { name: string; interest: string; source: string; stage: string; score: number; value: string; owner: string }
@@ -29,7 +31,8 @@ function App() {
     notify('Lead added to your pipeline')
   }
 
-  if (view === 'marketing') return <Marketing onLaunch={() => { window.location.hash = '#app'; setView('app') }} onStart={() => { window.location.hash = '#app'; setActive('Onboarding'); setView('app') }} />
+  if (view === 'marketing') return <Marketing onLaunch={() => setView('auth')} onStart={() => { window.location.hash = '#app'; setActive('Onboarding'); setView('app') }} />
+  if (view === 'auth') return <AuthScreen onDemo={() => { window.location.hash = '#app'; setActive('Overview'); setView('app') }} onBack={() => setView('marketing')} />
 
   return <div className={dark ? 'app dark' : 'app'}>
     <aside className="sidebar">
@@ -48,6 +51,24 @@ function App() {
     {showLead && <div className="modal-backdrop" onClick={() => setShowLead(false)}><form className="modal" onSubmit={addLead} onClick={(e) => e.stopPropagation()}><div className="modal-head"><div><p className="eyebrow">Quick create</p><h2>Add a lead</h2></div><button type="button" className="close" onClick={() => setShowLead(false)}>×</button></div><label>Lead name<input name="name" placeholder="e.g. James Mwangi" required /></label><label>What are they interested in?<input name="interest" placeholder="e.g. 3-bedroom apartment" required /></label><div className="modal-actions"><button type="button" className="btn secondary" onClick={() => setShowLead(false)}>Cancel</button><button className="btn primary">Add lead</button></div></form></div>}
     {toast && <div className="toast">✓ {toast}</div>}
   </div>
+}
+
+function AuthScreen({ onDemo, onBack }: { onDemo: () => void; onBack: () => void }) {
+  const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>('signin')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [notice, setNotice] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); setError(''); setNotice(''); setLoading(true)
+    const result = mode === 'signin' ? await signIn(email, password) : mode === 'signup' ? await signUp(email, password) : await requestPasswordReset(email)
+    setLoading(false)
+    if (!result.ok) setError(result.message)
+    else if (mode === 'signin') onDemo()
+    else setNotice(result.message ?? 'Done')
+  }
+  return <div className="auth-page"><div className="auth-decoration"><div className="auth-orbit orbit-one"></div><div className="auth-orbit orbit-two"></div><div className="auth-quote"><span>✦</span><p>“The calmest way to turn a busy inbox into a clear next step.”</p><small>Nexara LeadFlow</small></div></div><div className="auth-panel"><button className="auth-back" onClick={onBack}>← Back to Nexara</button><div className="auth-brand"><div className="brand-mark">N</div><strong>Nexara <span>LeadFlow</span></strong></div><div className="auth-content"><p className="eyebrow">{mode === 'signup' ? 'Start your workspace' : mode === 'reset' ? 'Account recovery' : 'Welcome back'}</p><h1>{mode === 'signup' ? 'Build your better pipeline.' : mode === 'reset' ? 'Reset your password.' : 'Good to see you again.'}</h1><p className="auth-sub">{mode === 'signup' ? 'Create a workspace for every conversation that matters.' : mode === 'reset' ? 'Enter your email and we’ll send a secure reset link.' : 'Sign in to continue to your LeadFlow workspace.'}</p>{!isSupabaseConfigured && <div className="auth-demo-notice"><span>Demo mode</span><p>Supabase Auth is not configured in this environment. Use the demo workspace to explore the product.</p><button onClick={onDemo}>Open demo workspace →</button></div>}<form onSubmit={submit}><label>Email address<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@company.com" required /></label>{mode !== 'reset' && <label>Password<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 8 characters" minLength={8} required /></label>}{error && <div className="form-error">! {error}</div>}{notice && <div className="form-success">✓ {notice}</div>}<button className="btn primary auth-submit" disabled={loading}>{loading ? 'Please wait…' : mode === 'signin' ? 'Sign in' : mode === 'signup' ? 'Create account' : 'Send reset link'} ↗</button></form><div className="auth-links">{mode === 'signin' && <button onClick={() => setMode('reset')}>Forgot password?</button>}{mode === 'reset' && <button onClick={() => setMode('signin')}>Back to sign in</button>}{mode !== 'reset' && <button onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}>{mode === 'signin' ? 'Create a new account' : 'Already have an account?'}</button>}</div><small className="auth-legal">By continuing, you agree to our Terms and Privacy Policy. Production authentication requires a configured Supabase project.</small></div></div></div>
 }
 
 function Marketing({ onLaunch, onStart }: { onLaunch: () => void; onStart: () => void }) {
