@@ -1,0 +1,53 @@
+/* Loaded after the original stylesheet so interaction/theme rules win consistently. */
+:root { --motion-ease: cubic-bezier(.16,1,.3,1); }
+.marketing-links { flex-direction: row; }
+.marketing-nav { position: sticky; top: 0; z-index: 5; background: #fbfbfdec; backdrop-filter: blur(16px); }
+.hero-product,.feature,.price-card { position: relative; transition: transform .5s var(--motion-ease),box-shadow .5s var(--motion-ease); }
+.tracking { transition-duration: .14s; }
+.feature::after,.price-card::after { content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit; background:radial-gradient(250px circle at var(--pointer-x,50%) var(--pointer-y,50%),#7970ed20,transparent 80%); opacity:0; transition:opacity .4s; }
+.tracking::after { opacity:1; }
+.hero-product .product-window { transition:transform .65s var(--motion-ease); }
+.hero-product.tracking .product-window { transform:translateZ(20px) rotate(0); }
+.hero-product.tracking .float-lead { transform:translate(12px,-14px); }
+.hero-product.tracking .float-ai { transform:translate(-10px,12px); }
+.float-card { transition:transform .8s var(--motion-ease); }
+.reveal { animation:none!important; opacity:0; translate:0 30px; transition:opacity .8s var(--motion-ease) var(--delay,0ms),translate .8s var(--motion-ease) var(--delay,0ms),transform .35s var(--motion-ease); }
+.reveal.revealed { opacity:1; translate:0 0; }
+.marketing .mini-chart path { stroke-dasharray:600; stroke-dashoffset:600; animation:draw-chart 2.2s var(--motion-ease) .6s forwards; }
+@keyframes draw-chart { to { stroke-dashoffset:0; } }
+.content > * { animation:workspace-enter .4s var(--motion-ease) both; }
+@keyframes workspace-enter { from { opacity:0; translate:0 8px; } to { opacity:1; translate:0 0; } }
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible { outline:2px solid #9188ff; outline-offset:4px; }
+.insight-controls { display:flex; align-items:end; flex-wrap:wrap; gap:22px; padding:20px; margin-bottom:22px; }
+.insight-controls label { flex:1; min-width:150px; font-size:12px; color:var(--muted); }
+.insight-controls select,.insight-controls input { display:block; width:100%; margin-top:10px; }
+.analytics-workbench select { border:1px solid var(--line); border-radius:8px; padding:9px; background:var(--card); color:var(--ink); font:inherit; }
+.insights-layout { display:grid; grid-template-columns:1.5fr 1fr; gap:18px; margin:20px 0; }
+.insight-panel { padding-bottom:20px; }
+.breakdown { padding:24px; display:grid; gap:14px; }
+.breakdown button { position:relative; overflow:hidden; isolation:isolate; width:100%; display:flex; justify-content:space-between; gap:16px; border:1px solid var(--line); border-radius:8px; background:transparent; color:var(--ink); padding:18px 14px; text-align:left; font-size:13px; }
+.breakdown button i { position:absolute; inset:0 auto 0 0; z-index:-1; background:#7970ed28; transition:width .5s var(--motion-ease); }
+.breakdown button[aria-pressed=true] { border-color:#9188ff; box-shadow:0 0 0 2px #9188ff30; }
+.breakdown button:hover i { background:#7970ed40; }
+.health-summary { padding:26px; }
+.health-summary > strong { font-size:48px; display:block; letter-spacing:-2px; }
+.health-summary > span,.health-summary p,.report-footnote { color:var(--muted); font-size:13px; line-height:1.6; }
+.report-table { width:100%; border-collapse:collapse; font-size:13px; }
+.report-table th,.report-table td { text-align:left; padding:16px; border-bottom:1px solid var(--line); white-space:nowrap; }
+.report-table th { color:var(--muted); font-weight:500; }
+.report-table tbody tr:hover { background:#7970ed12; }
+.analytics-workbench button:disabled { opacity:.45; cursor:not-allowed; }
+.dark { color-scheme:dark; --ink:#edf1f8; --muted:#b0bbcd; --line:#354258; --card:#202a3b; }
+.dark :is(input,textarea,select,.pipeline-column,.contact-summary>div,.inbox-search,.chat-composer input,.modal input,.date-divider span) { background:#182131; color:#edf1f8; border-color:#354258; }
+.dark :is(.more-btn,.close,.icon-btn,.btn.secondary,.filter,.select,.table-search input) { background:#202a3b; color:#bfc9dc; }
+.dark :is(.conversation strong,.context-section strong,.context-profile h2,.workflow-select select,.question-row strong,.onboarding-progress h1,.empty-page h1,.performance-row strong) { color:#edf1f8; }
+.dark :is(.integration-notice,.automation-test) { background:#233b37; border-color:#376257; }
+.dark :is(.integration-notice p,.automation-test small,.automation-test strong) { color:#b5dfcf; }
+.dark :is(.score,.status.contacted,.contact-type.prospect) { background:#483b28; color:#ffd897; }
+.dark :is(.score.high,.status-toggle.on,.contact-type.customer) { background:#203f37; color:#98e2c7; }
+.dark :is(.contact-type.lead,.test-badge,.count) { background:#302d60; color:#d1ccff; }
+.dark .pipeline-column { border:1px solid var(--line); }
+.dark .pipeline-card { background:var(--card); }
+.dark :is(.text-btn,.demo-banner button,.knowledge-edit,.takeover-note button,.composer-tools button) { color:#bcb5ff; }
+@media(max-width:720px) { .insights-layout{grid-template-columns:1fr}.analytics-workbench .card-head{gap:15px;flex-wrap:wrap}.report-table{min-width:600px}.insight-controls{gap:14px} }
+@media(prefers-reduced-motion:reduce) { .reveal{opacity:1;translate:none}.marketing .mini-chart path{stroke-dashoffset:0}.tracking{transform:none!important}*,*::before,*::after{animation:none!important;transition:none!important} }
