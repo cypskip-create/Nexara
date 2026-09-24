@@ -63,3 +63,21 @@ export async function listLeadActivity(leadId:string,organizationId:string):Prom
   if(error)throwServiceError(error,'Unable to load lead activity.')
   return data??[]
 }
+
+export async function listWorkspaceActivity(organizationId:string):Promise<LeadActivityRow[]> {
+  const {data,error}=await requireSupabase().from('lead_activities').select('*').eq('organization_id',organizationId).order('created_at',{ascending:false}).limit(500)
+  if(error)throwServiceError(error,'Unable to load workspace activity.')
+  return data??[]
+}
+
+export async function updateLeadFields(leadId:string,organizationId:string,input:{interest?:string;source?:string;score?:number;estimatedValue?:number|null;nextAction?:string|null}):Promise<LeadRow> {
+  const payload:Partial<Pick<LeadRow,'interest'|'source'|'score'|'estimated_value'|'next_action'|'updated_at'>>={updated_at:new Date().toISOString()}
+  if(input.interest!==undefined)payload.interest=input.interest.trim()||null
+  if(input.source!==undefined)payload.source=input.source.trim()||null
+  if(input.score!==undefined){if(!Number.isInteger(input.score)||input.score<0||input.score>100)throw new Error('Lead score must be a whole number from 0 to 100.');payload.score=input.score}
+  if(input.estimatedValue!==undefined)payload.estimated_value=input.estimatedValue
+  if(input.nextAction!==undefined)payload.next_action=input.nextAction?.trim()||null
+  const {data,error}=await requireSupabase().from('leads').update(payload).eq('id',leadId).eq('organization_id',organizationId).select().single()
+  if(error)throwServiceError(error,'Unable to update the lead.')
+  return data
+}

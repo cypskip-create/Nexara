@@ -7,6 +7,7 @@ import './enhancements.css'
 import LandingPage from './marketing/LandingPage'
 import { ContactsPage, LeadDialog, LeadProfile, LeadsPage, PipelinePage } from './features/crm/CRM'
 import { useWorkspaceData } from './features/crm/useWorkspaceData'
+import { useSupabaseWorkspaceData } from './features/crm/useSupabaseWorkspaceData'
 import { useAuthSession } from './features/auth/useAuthSession'
 import { useOrganizations } from './features/organizations/useOrganizations'
 import type { LeadDraft, WorkspaceLead } from './features/crm/types'
@@ -21,10 +22,12 @@ function App() {
   const [demoMode,setDemoMode]=useState(()=>!isSupabaseConfigured||sessionStorage.getItem('nexara-demo-mode')==='true')
   const [active, setActive] = useState('Overview')
   const [dark, setDark] = useState(() => localStorage.getItem('nexara-theme') === 'dark')
-  const workspace = useWorkspaceData()
+  const demoWorkspace = useWorkspaceData()
   const auth=useAuthSession()
   const liveMode=isSupabaseConfigured&&!demoMode
   const organizationState=useOrganizations(liveMode&&Boolean(auth.user))
+  const liveWorkspace=useSupabaseWorkspaceData(organizationState.activeOrganization?.id,liveMode&&Boolean(organizationState.activeOrganization))
+  const workspace=demoMode?demoWorkspace:liveWorkspace
   const leads = workspace.leads
   const [showLead, setShowLead] = useState(false)
   const [editLeadId, setEditLeadId] = useState<string | null>(null)
@@ -38,10 +41,12 @@ function App() {
   const editedLead = leads.find((lead) => lead.id === editLeadId)
 
   const notify = (message: string) => { setToast(message); window.setTimeout(() => setToast(''), 2800) }
-  const saveLead = (draft: LeadDraft) => {
-    if (editedLead) workspace.updateLead(editedLead.id, draft, 'Lead details updated')
-    else setProfileId(workspace.addLead(draft))
-    setShowLead(false); setEditLeadId(null); notify(editedLead ? 'Lead updated' : 'Lead created')
+  const saveLead = async(draft: LeadDraft) => {
+    try{
+      if (editedLead) await workspace.updateLead(editedLead.id, draft, 'Lead details updated')
+      else setProfileId(await workspace.addLead(draft))
+      setShowLead(false);setEditLeadId(null);notify(editedLead?'Lead updated':'Lead created')
+    }catch(reason){notify(reason instanceof Error?reason.message:'Unable to save the lead.');throw reason}
   }
   const openModule = (module: string) => { setActive(module); setSearchOpen(false); setMobileNavOpen(false) }
   const openLead = (leadId: string) => { setProfileId(leadId); setSearchOpen(false) }
@@ -62,6 +67,8 @@ function App() {
   if(liveMode&&organizationState.loading)return <SessionGate title="Loading your workspaces" copy="Applying your organization permissions…" />
   if(liveMode&&organizationState.error)return <SessionGate title="Workspace unavailable" copy={organizationState.error} action="Try again" onAction={()=>void organizationState.refresh()} />
   if(liveMode&&!organizationState.activeOrganization)return <div className={dark?'app dark setup-only':'app setup-only'}><section className="content"><Onboarding onComplete={async business=>{await organizationState.create(business);setActive('Overview');notify('Workspace created securely')}} onNotify={notify}/></section>{toast&&<div className="toast" role="status">✓ {toast}</div>}</div>
+  if(liveMode&&liveWorkspace.loading)return <SessionGate title="Loading your CRM" copy="Syncing leads, contacts, activity and workspace members…" />
+  if(liveMode&&liveWorkspace.error)return <SessionGate title="CRM unavailable" copy={liveWorkspace.error} action="Try again" onAction={()=>void liveWorkspace.refresh()} />
 
   const organizationName=demoMode?'Acacia Properties':organizationState.activeOrganization?.name??'Workspace'
   const userName=demoMode?'Cyprian Mwangi':String(auth.user?.user_metadata.full_name??auth.user?.email??'Account')
@@ -79,11 +86,11 @@ function App() {
     <main className="main">
       <header className="topbar"><div className="mobile-brand"><button className="mobile-nav-toggle" aria-label={mobileNavOpen ? 'Close navigation' : 'Open navigation'} aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen(!mobileNavOpen)}>☰</button><div className="brand-mark">N</div><strong>Nexara</strong></div><div className="breadcrumbs"><span>{organizationName}</span><b>/</b><strong>{active}</strong></div><div className="top-actions"><button className="search" onClick={() => setSearchOpen(true)}><span>⌕</span> Search <kbd>Ctrl K</kbd></button><button className="icon-btn" onClick={() => setDark(!dark)} aria-label="Toggle theme">{dark ? '☼' : '☾'}</button><div className="notification-wrap"><button className="icon-btn" onClick={() => setNotificationsOpen(!notificationsOpen)} aria-expanded={notificationsOpen} aria-label="Notifications">♢{!notificationsRead && <i></i>}</button>{notificationsOpen && <div className="notification-popover"><header><strong>Notifications</strong><button onClick={() => setNotificationsRead(true)}>Mark all read</button></header><button onClick={() => { openLead('lead-james'); setNotificationsOpen(false) }}><span className="notification-dot qualified"></span><span><strong>James is ready for a viewing</strong><small>Qualified lead · 2 min ago</small></span></button><button onClick={() => { openModule('Automations'); setNotificationsOpen(false) }}><span className="notification-dot warning"></span><span><strong>Review lead routing</strong><small>Automation · 1 hour ago</small></span></button><button onClick={() => { openModule('Inbox'); setNotificationsOpen(false) }}><span className="notification-dot"></span><span><strong>Two unread conversations</strong><small>Inbox · today</small></span></button></div>}</div><div className="avatar">{userInitials}</div></div></header>
       <section className="content">
-        {active === 'Overview' ? <Overview leads={leads} onAdd={() => setShowLead(true)} onNotify={notify} /> : active === 'Onboarding' ? <Onboarding onComplete={() => { setActive('Overview'); notify('Workspace setup complete') }} onNotify={notify} /> : active === 'Leads' ? <LeadsPage leads={leads} onAdd={() => setShowLead(true)} onUpdate={workspace.updateLead} onArchive={workspace.archiveLeads} onOpen={openLead} notify={notify} /> : active === 'Pipeline' ? <PipelinePage leads={leads} onMove={workspace.moveLead} onOpen={openLead} notify={notify} /> : active === 'Inbox' ? <Inbox onNotify={notify} /> : active === 'Contacts' ? <ContactsPage contacts={workspace.contacts} leads={leads} onAdd={workspace.addContact} onUpdate={workspace.updateContact} notify={notify} /> : active === 'Knowledge' ? <Knowledge onNotify={notify} /> : active === 'Analytics' ? <Suspense fallback={<p role="status">Loading analytics…</p>}><AnalyticsWorkbench leads={leads} /></Suspense> : active === 'Integrations' ? <Integrations onNotify={notify} /> : active === 'Settings' ? <Settings onNotify={notify} /> : active === 'AI Assistant' ? <AIAssistant onNotify={notify} /> : active === 'Automations' ? <Automations onNotify={notify} /> : active === 'Help' ? <HelpCenter onNavigate={openModule} /> : <ComingSoon title={active} onNotify={notify} />}
+        {active === 'Overview' ? <Overview leads={leads} onAdd={() => setShowLead(true)} onNotify={notify} /> : active === 'Onboarding' ? <Onboarding onComplete={() => { setActive('Overview'); notify('Workspace setup complete') }} onNotify={notify} /> : active === 'Leads' ? <LeadsPage leads={leads} owners={workspace.owners} isDemo={demoMode} onAdd={() => setShowLead(true)} onUpdate={workspace.updateLead} onArchive={workspace.archiveLeads} onOpen={openLead} notify={notify} /> : active === 'Pipeline' ? <PipelinePage leads={leads} isDemo={demoMode} onMove={workspace.moveLead} onOpen={openLead} notify={notify} /> : active === 'Inbox' ? <Inbox onNotify={notify} /> : active === 'Contacts' ? <ContactsPage contacts={workspace.contacts} leads={leads} onAdd={workspace.addContact} onUpdate={workspace.updateContact} notify={notify} /> : active === 'Knowledge' ? <Knowledge onNotify={notify} /> : active === 'Analytics' ? <Suspense fallback={<p role="status">Loading analytics…</p>}><AnalyticsWorkbench leads={leads} /></Suspense> : active === 'Integrations' ? <Integrations onNotify={notify} /> : active === 'Settings' ? <Settings onNotify={notify} /> : active === 'AI Assistant' ? <AIAssistant onNotify={notify} /> : active === 'Automations' ? <Automations onNotify={notify} /> : active === 'Help' ? <HelpCenter onNavigate={openModule} /> : <ComingSoon title={active} onNotify={notify} />}
       </section>
     </main>
-    {(showLead || editedLead) && <LeadDialog lead={editedLead} onClose={() => { setShowLead(false); setEditLeadId(null) }} onSave={saveLead} />}
-    {selectedLead && <LeadProfile lead={selectedLead} onClose={() => setProfileId(null)} onUpdate={workspace.updateLead} onAddNote={workspace.addNote} onEdit={() => { setEditLeadId(selectedLead.id); setProfileId(null) }} notify={notify} />}
+    {(showLead || editedLead) && <LeadDialog lead={editedLead} owners={workspace.owners} onClose={() => { setShowLead(false); setEditLeadId(null) }} onSave={saveLead} />}
+    {selectedLead && <LeadProfile lead={selectedLead} owners={workspace.owners} onClose={() => setProfileId(null)} onUpdate={workspace.updateLead} onAddNote={workspace.addNote} onSchedule={workspace.addFollowUp} onEdit={() => { setEditLeadId(selectedLead.id); setProfileId(null) }} notify={notify} />}
     {searchOpen && <CommandSearch leads={leads} onClose={() => setSearchOpen(false)} onModule={openModule} onLead={openLead} />}
     {toast && <div className="toast" role="status">✓ {toast}</div>}
   </div>

@@ -1,7 +1,8 @@
-import type { OrganizationRow } from '../types/database'
+import type { MemberRole, OrganizationRow } from '../types/database'
 import { requireSupabase, throwServiceError } from './api'
 
 export type OrganizationSummary = OrganizationRow & { role:string }
+export type OrganizationMember = { userId:string; role:MemberRole; name:string }
 
 export async function listOrganizations():Promise<OrganizationSummary[]> {
   const client=requireSupabase()
@@ -20,6 +21,17 @@ export async function createOrganization(name:string):Promise<string> {
   const {data,error}=await requireSupabase().rpc('create_organization',{org_name:normalized})
   if(error)throwServiceError(error,'Unable to create the workspace.')
   return data
+}
+
+export async function listOrganizationMembers(organizationId:string):Promise<OrganizationMember[]> {
+  const client=requireSupabase()
+  const {data:memberships,error:membershipError}=await client.from('organization_members').select('*').eq('organization_id',organizationId).order('created_at')
+  if(membershipError)throwServiceError(membershipError,'Unable to load workspace members.')
+  if(!memberships?.length)return []
+  const {data:profiles,error:profileError}=await client.from('profiles').select('*').in('id',memberships.map(member=>member.user_id))
+  if(profileError)throwServiceError(profileError,'Unable to load member profiles.')
+  const names=new Map((profiles??[]).map(profile=>[profile.id,profile.full_name]))
+  return memberships.map(member=>({userId:member.user_id,role:member.role,name:names.get(member.user_id)?.trim()||'Workspace member'}))
 }
 
 export async function updateOnboarding(organizationId:string,step:number,completed=false):Promise<OrganizationRow> {

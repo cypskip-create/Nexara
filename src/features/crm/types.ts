@@ -10,6 +10,7 @@ export type TimelineEntry = {
 
 export type WorkspaceLead = {
   id: string
+  contactId?: string | null
   name: string
   email: string
   phone: string
@@ -20,6 +21,7 @@ export type WorkspaceLead = {
   score: number
   value: string
   owner: string
+  ownerId?: string | null
   tags: string[]
   createdAt: string
   lastActivity: string
@@ -27,6 +29,8 @@ export type WorkspaceLead = {
   notes: TimelineEntry[]
   archived?: boolean
 }
+
+export type OwnerOption = { id: string; label: string }
 
 export type WorkspaceContact = {
   id: string
@@ -39,5 +43,5 @@ export type WorkspaceContact = {
   lastActivity: string
 }
 
-export type LeadDraft = Pick<WorkspaceLead, 'name' | 'email' | 'phone' | 'company' | 'interest' | 'source' | 'stage' | 'score' | 'value' | 'owner' | 'tags' | 'nextAction'>
+export type LeadDraft = Pick<WorkspaceLead, 'name' | 'email' | 'phone' | 'company' | 'interest' | 'source' | 'stage' | 'score' | 'value' | 'owner' | 'ownerId' | 'tags' | 'nextAction'>
 export type ContactDraft = Pick<WorkspaceContact, 'name' | 'email' | 'phone' | 'company' | 'tags' | 'type'>
