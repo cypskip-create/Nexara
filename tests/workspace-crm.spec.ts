@@ -107,6 +107,20 @@ test('contact creation, editing and relationship history work', async ({ page })
   await expect(page.locator('.contacts-table tbody tr')).toContainText('1')
 })
 
+test('follow-up tasks can be reviewed, opened and completed',async({page})=>{
+  await page.locator('.sidebar nav').getByRole('button',{name:'Tasks'}).click()
+  await expect(page.getByRole('heading',{name:'Tasks'})).toBeVisible()
+  await expect(page.locator('.task-list')).toContainText('Confirm Saturday viewing')
+  await page.getByRole('button',{name:/Open Aisha Njeri/}).click()
+  await expect(page.getByRole('dialog')).toContainText('Aisha Njeri')
+  await page.getByRole('button',{name:'Close profile'}).click()
+  await page.locator('.sidebar nav').getByRole('button',{name:'Tasks'}).click()
+  await page.getByRole('button',{name:'Complete Confirm Saturday viewing'}).click()
+  await expect(page.locator('.task-list')).toContainText('You’re all caught up')
+  await page.getByRole('button',{name:'Completed'}).click()
+  await expect(page.locator('.task-list')).toContainText('Confirm Saturday viewing')
+})
+
 test('global search, notifications, help and theme are operational', async ({ page }) => {
   await page.keyboard.press('Control+k')
   const search = page.getByRole('dialog', { name: 'Search workspace' })
@@ -131,7 +145,7 @@ test('global search, notifications, help and theme are operational', async ({ pa
 for (const width of [1024, 768, 430, 390]) {
   test(`CRM pages avoid document overflow at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
-    for (const name of ['Leads', 'Pipeline', 'Contacts']) {
+    for (const name of ['Leads', 'Pipeline', 'Tasks', 'Contacts']) {
       const mobileToggle = page.getByRole('button', { name: 'Open navigation' })
       if (await mobileToggle.isVisible()) await mobileToggle.click()
       await page.locator('.sidebar nav').getByRole('button', { name }).click()

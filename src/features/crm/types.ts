@@ -31,6 +31,7 @@ export type WorkspaceLead = {
 }
 
 export type OwnerOption = { id: string; label: string }
+export type WorkspaceTask = { id:string; leadId:string|null; leadName:string; title:string; description:string; dueAt:string|null; status:'Open'|'Completed'|'Cancelled'; assignee:string }
 
 export type WorkspaceContact = {
   id: string

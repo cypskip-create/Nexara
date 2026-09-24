@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { ContactDraft, LeadDraft, LeadStage, OwnerOption, TimelineEntry, WorkspaceContact, WorkspaceLead } from './types'
+import type { ContactDraft, LeadDraft, LeadStage, OwnerOption, TimelineEntry, WorkspaceContact, WorkspaceLead, WorkspaceTask } from './types'
 
 const STORAGE_KEY = 'nexara-demo-workspace-v2'
 const now = () => new Date().toISOString()
@@ -28,6 +28,7 @@ function loadWorkspace(): StoredWorkspace {
 
 export function useWorkspaceData() {
   const [data,setData]=useState<StoredWorkspace>(loadWorkspace)
+  const [tasks,setTasks]=useState<WorkspaceTask[]>([{id:'demo-task-aisha',leadId:'lead-aisha',leadName:'Aisha Njeri',title:'Confirm Saturday viewing',description:'Follow up on the requested townhouse viewing.',dueAt:new Date(Date.now()+3_600_000).toISOString(),status:'Open',assignee:'Cyprian'}])
   const dataRef=useRef(data)
   useEffect(()=>localStorage.setItem(STORAGE_KEY,JSON.stringify(data)),[data])
   const commit=(change:(current:StoredWorkspace)=>StoredWorkspace)=>{
@@ -53,6 +54,7 @@ export function useWorkspaceData() {
   const addContact=(draft:ContactDraft)=>commit(current=>({...current,contacts:[{...draft,id:id(),lastActivity:'Just now'},...current.contacts]}))
   const updateContact=(contactId:string,changes:Partial<WorkspaceContact>)=>commit(current=>({...current,contacts:current.contacts.map(contact=>contact.id===contactId?{...contact,...changes,lastActivity:'Just now'}:contact)}))
   const resetDemo=()=>commit(()=>({version:2,leads:seedLeads,contacts:seedContacts}))
+  const completeTask=(taskId:string)=>setTasks(current=>current.map(task=>task.id===taskId?{...task,status:'Completed'}:task))
   const owners:OwnerOption[]=['Cyprian','Sarah','David'].map(owner=>({id:owner,label:owner}))
-  return {leads:activeLeads,archivedLeads:data.leads.filter(lead=>lead.archived),contacts:data.contacts,owners,loading:false,error:'',refresh:async()=>{},addLead,updateLead,moveLead,addNote,addFollowUp,archiveLeads,addContact,updateContact,resetDemo}
+  return {leads:activeLeads,archivedLeads:data.leads.filter(lead=>lead.archived),contacts:data.contacts,tasks,owners,loading:false,error:'',refresh:async()=>{},addLead,updateLead,moveLead,addNote,addFollowUp,archiveLeads,addContact,updateContact,completeTask,resetDemo}
 }
