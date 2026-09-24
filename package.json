@@ -9,6 +9,7 @@
     "lint": "eslint src",
     "typecheck": "tsc -b",
     "test": "playwright test",
+    "test:backend": "playwright test tests/backend-contract.spec.ts",
     "preview": "vite preview"
   },
   "dependencies": {

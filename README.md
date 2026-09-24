@@ -21,6 +21,12 @@ Validate with `npm run typecheck`, `npm run lint`, `npm test`, and `npm run buil
 Browser tests use installed Microsoft Edge and an isolated Vite server on port 5174.
 Screenshots and failure traces are written to the ignored `test-results/` directory.
 
+## Supabase backend
+
+The repository includes reproducible migrations for authentication profiles, organizations, role-based memberships, tenant-isolated CRM data, inbox entities, knowledge, automations, audit events, tasks, AI configuration, integrations, subscriptions and analytics events. Privileged CRM workflows use transactional PostgreSQL functions so the record change, timeline entry, audit event and analytics event remain consistent.
+
+See [backend foundation](docs/backend-foundation.md) for migration, authorization and production-verification guidance.
+
 ## Public product experience
 
 The homepage is an interactive conversation-to-customer walkthrough, separate from the
@@ -38,10 +44,10 @@ Copy `.env.example` to `.env.local`. Only `VITE_APP_URL` is needed for the curre
 
 ## Product implementation plan
 
-1. Add Supabase migrations for organizations, memberships, profiles, contacts, leads, pipeline stages, conversations, messages, knowledge, automations, notifications, audit events and billing records.
-2. Add Supabase Auth and server-side authorization/RLS tests before connecting live data.
-3. Move demo state behind repositories/services, preserving the current empty/loading/error states.
-4. Connect the existing CRM screens to Supabase and implement production inbox, AI configuration and automation execution services.
+1. Run the migrations against a disposable Supabase project and complete live tenant-isolation tests.
+2. Connect session/workspace state to the typed CRM services while retaining explicit demo mode.
+3. Implement production inbox ingestion, AI execution and automation workers behind server-side endpoints.
+4. Add team invitations and onboarding persistence to the authenticated application journey.
 5. Add official WhatsApp Cloud API webhook handling and provider adapters only after credentials are available.
 
 ## Demo data
