@@ -6,9 +6,11 @@ const root=resolve(import.meta.dirname,'..')
 const migrationPath=resolve(root,'supabase/migrations/0004_secure_product_backend.sql')
 
 test('all new tenant-owned tables enable row-level security',async()=>{
-  const sql=await readFile(migrationPath,'utf8')
+  const [sql,profileSecurity]=await Promise.all([readFile(migrationPath,'utf8'),readFile(resolve(root,'supabase/migrations/0005_profile_security.sql'),'utf8')])
   const tables=['invitations','lead_activities','tasks','ai_configs','automation_runs','integrations','subscriptions','analytics_events']
   for(const table of tables)expect(sql).toContain(`alter table public.${table} enable row level security;`)
+  expect(profileSecurity).toContain('alter table public.profiles enable row level security;')
+  expect(profileSecurity).toContain('public.shares_organization_with(id)')
 })
 
 test('tenant relationships and organization identifiers are protected',async()=>{
