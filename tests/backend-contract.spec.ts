@@ -41,3 +41,10 @@ test('legacy all-member mutation policies are removed',async()=>{
   expect(sql).toContain('public.can_access_owned_record(organization_id, owner_id)')
   expect(sql).toContain('revoke insert, delete, update on public.leads from authenticated')
 })
+
+test('live workspace tables are published for realtime collaboration',async()=>{
+  const sql=await readFile(resolve(root,'supabase/migrations/0006_workspace_realtime.sql'),'utf8')
+  for(const table of ['leads','contacts','lead_activities','tasks','organization_members'])expect(sql).toContain(`'${table}'`)
+  expect(sql).toContain("pubname = 'supabase_realtime'")
+  expect(sql).toContain('alter publication supabase_realtime add table')
+})

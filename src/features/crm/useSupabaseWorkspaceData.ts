@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { supabase } from '../../lib/supabase'
 import { createContact, listContacts, updateContact as saveContact } from '../../services/contacts'
 import { addLeadNote, archiveLead, assignLead, createLead, listLeads, listWorkspaceActivity, moveLead as transitionLead, scheduleFollowUp, updateLeadFields } from '../../services/leads'
 import { listOrganizationMembers } from '../../services/organizations'
@@ -46,6 +47,20 @@ export function useSupabaseWorkspaceData(organizationId:string|undefined,enabled
   },[enabled,organizationId])
 
   useEffect(()=>{void refresh()},[refresh])
+  useEffect(()=>{
+    if(!enabled||!organizationId||!supabase)return
+    const client=supabase
+    let timer:number|undefined
+    const queueRefresh=()=>{window.clearTimeout(timer);timer=window.setTimeout(()=>void refresh(),180)}
+    const channel=client.channel(`workspace:${organizationId}`)
+      .on('postgres_changes',{event:'*',schema:'public',table:'leads',filter:`organization_id=eq.${organizationId}`},queueRefresh)
+      .on('postgres_changes',{event:'*',schema:'public',table:'contacts',filter:`organization_id=eq.${organizationId}`},queueRefresh)
+      .on('postgres_changes',{event:'*',schema:'public',table:'lead_activities',filter:`organization_id=eq.${organizationId}`},queueRefresh)
+      .on('postgres_changes',{event:'*',schema:'public',table:'tasks',filter:`organization_id=eq.${organizationId}`},queueRefresh)
+      .on('postgres_changes',{event:'*',schema:'public',table:'organization_members',filter:`organization_id=eq.${organizationId}`},queueRefresh)
+      .subscribe()
+    return()=>{window.clearTimeout(timer);void client.removeChannel(channel)}
+  },[enabled,organizationId,refresh])
 
   const contactsById=useMemo(()=>new Map(contactRows.map(contact=>[contact.id,contact])),[contactRows])
   const ownerNames=useMemo(()=>new Map(owners.map(owner=>[owner.id,owner.label])),[owners])
