@@ -17,7 +17,20 @@ Copy-Item .env.example .env.local
 npm run dev
 ```
 
-Validate with `npm run lint` and build with `npm run build`.
+Validate with `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build`.
+Browser tests use installed Microsoft Edge and an isolated Vite server on port 5174.
+Screenshots and failure traces are written to the ignored `test-results/` directory.
+
+## Public product experience
+
+The homepage is an interactive conversation-to-customer walkthrough, separate from the
+demo workspace at `/#app`. It includes finite product animations, a sticky transformation
+story, scripted AI questions, CRM/pipeline/inbox demonstrations, the real analytics
+workbench with isolated sample records, industry examples, pricing and accessible FAQs.
+
+See [landing experience notes](docs/landing-experience.md) for architecture, motion,
+accessibility, testing and launch prerequisites. Marketing demonstrations do not call
+live AI providers, send messages, create subscriptions or modify workspace data.
 
 ## Environment
 
