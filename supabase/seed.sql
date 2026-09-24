@@ -1,0 +1,2 @@
+-- Development seed entrypoint. Intentionally empty by default.
+-- Add only clearly-labelled demo records and run them against local/disposable projects.
