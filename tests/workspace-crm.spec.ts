@@ -2,8 +2,16 @@ import { expect, test } from '@playwright/test'
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/#app')
-  await page.evaluate(() => localStorage.removeItem('nexara-demo-workspace-v2'))
+  await page.evaluate(() => { localStorage.removeItem('nexara-demo-workspace-v2'); sessionStorage.setItem('nexara-demo-mode','true') })
   await page.reload()
+})
+
+test('configured production routes require a session while demo access remains explicit',async({page})=>{
+  await page.evaluate(()=>sessionStorage.removeItem('nexara-demo-mode'))
+  await page.reload()
+  await expect(page.getByRole('heading',{name:'Good to see you again.'})).toBeVisible()
+  await page.getByRole('button',{name:'Explore the demo instead'}).click()
+  await expect(page.getByRole('heading',{name:/Good morning/})).toBeVisible()
 })
 
 test('creates a complete lead, opens its profile and persists it after reload', async ({ page }) => {

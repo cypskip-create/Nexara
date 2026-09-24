@@ -1,17 +1,17 @@
 import { supabase } from '../lib/supabase'
 
-export type AuthResult = { ok: true; message?: string } | { ok: false; message: string }
+export type AuthResult = { ok: true; message?: string; authenticated?: boolean } | { ok: false; message: string }
 
 export async function signIn(email: string, password: string): Promise<AuthResult> {
   if (!supabase) return { ok: false, message: 'Live authentication is not configured. Use demo access or add Supabase variables to .env.local.' }
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
-  return error ? { ok: false, message: error.message } : { ok: true }
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  return error ? { ok: false, message: error.message } : { ok: true, authenticated:Boolean(data.session) }
 }
 
 export async function signUp(email: string, password: string): Promise<AuthResult> {
   if (!supabase) return { ok: false, message: 'Live authentication is not configured. Add Supabase variables to .env.local before creating an account.' }
-  const { error } = await supabase.auth.signUp({ email, password })
-  return error ? { ok: false, message: error.message } : { ok: true, message: 'Account created. Check your email to verify your address.' }
+  const { data, error } = await supabase.auth.signUp({ email, password })
+  return error ? { ok: false, message: error.message } : { ok: true, authenticated:Boolean(data.session), message:data.session?'Account created. Your workspace is ready to configure.':'Account created. Check your email to verify your address.' }
 }
 
 export async function requestPasswordReset(email: string): Promise<AuthResult> {
@@ -24,4 +24,11 @@ export async function signOut(): Promise<AuthResult> {
   if (!supabase) return { ok: true }
   const { error } = await supabase.auth.signOut()
   return error ? { ok: false, message: error.message } : { ok: true }
+}
+
+export async function updatePassword(password:string):Promise<AuthResult>{
+  if(!supabase)return {ok:false,message:'Password recovery requires a configured Supabase project.'}
+  if(password.length<8)return {ok:false,message:'Use at least eight characters.'}
+  const {error}=await supabase.auth.updateUser({password})
+  return error?{ok:false,message:error.message}:{ok:true,message:'Password updated. You can continue to your workspace.',authenticated:true}
 }

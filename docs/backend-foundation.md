@@ -1,6 +1,6 @@
 # Backend foundation
 
-The production data path targets Supabase PostgreSQL and Supabase Auth. Demo mode remains browser-local until a project URL and anonymous key are configured; it is intentionally isolated from production records.
+The production data path uses Supabase PostgreSQL and Supabase Auth. Demo mode remains browser-local and is intentionally isolated from production records.
 
 ## Migration order
 
@@ -23,7 +23,7 @@ Migration `0004_secure_product_backend.sql` adds the operational backend foundat
 
 ## Trust boundaries
 
-The browser receives only the Supabase project URL and anonymous key. RLS is the authorization boundary. Provider secrets and the service-role key must be used only by server-side functions or deployment secrets and must never use a `VITE_` prefix.
+The browser receives only the Supabase project URL and publishable key. RLS is the authorization boundary. Provider secrets and the Supabase secret key must be used only by server-side functions or deployment secrets and must never use a `VITE_` prefix.
 
 The CRM service layer calls database functions for operations that span multiple records. The functions repeat authorization checks before running under `security definer`, validate organization membership and do not accept arbitrary SQL or executable automation code.
 
@@ -38,4 +38,4 @@ The CRM service layer calls database functions for operations that span multiple
 5. Verify admins cannot remove or demote the final owner.
 6. Run the full application test suite against that environment.
 
-The current development machine does not have the Supabase CLI installed, so migrations have not been executed against a live PostgreSQL instance in this repository session.
+The repository is connected to production project `lgfnnlrkedzrnvnchash`. GitHub production deployment is enabled for `master`; migrations through `0005_profile_security.sql` have been applied successfully and Supabase Security Advisor reports no issues. Continue to use a disposable project for destructive migration and multi-tenant penetration tests before customer launch.

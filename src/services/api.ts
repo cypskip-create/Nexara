@@ -5,7 +5,7 @@ export class ServiceError extends Error {
 }
 
 export function requireSupabase() {
-  if (!supabase) throw new ServiceError('NOT_CONFIGURED','Supabase is not configured. Add the public project URL and anonymous key to .env.local.')
+  if (!supabase) throw new ServiceError('NOT_CONFIGURED','Supabase is not configured. Add the public project URL and publishable key to .env.local.')
   return supabase
 }
 

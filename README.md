@@ -40,7 +40,7 @@ live AI providers, send messages, create subscriptions or modify workspace data.
 
 ## Environment
 
-Copy `.env.example` to `.env.local`. Only `VITE_APP_URL` is needed for the current demo shell. Supabase, AI, WhatsApp and future billing values are intentionally empty until their accounts and server-side endpoints are configured. Never expose service-role or provider secrets through `VITE_` variables.
+Copy `.env.example` to `.env.local`. Demo mode only needs `VITE_APP_URL`; authenticated production mode also needs `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`. AI, WhatsApp and billing secrets remain server-only until their adapters are configured. Never expose Supabase secret keys or provider credentials through `VITE_` variables.
 
 ## Product implementation plan
 
