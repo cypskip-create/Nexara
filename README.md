@@ -1,6 +1,6 @@
 # Nexara LeadFlow
 
-Nexara LeadFlow is a multi-tenant lead capture, qualification, CRM, automation and analytics platform for SMEs. This repository is the initial production-oriented foundation: it includes a polished responsive workspace shell, demo dashboard, lead table, quick-create lead flow, theme switching, intentional empty states, and a documented path to Supabase-backed services.
+Nexara LeadFlow is a multi-tenant lead capture, qualification, CRM, automation and analytics platform for SMEs. The current product includes a polished responsive workspace, persistent browser-based demo CRM, lead and contact management, an interactive pipeline, lead activity timelines, global search, notifications, theme switching, analytics, and a motion-rich public landing experience.
 
 ## Stack
 
@@ -41,18 +41,22 @@ Copy `.env.example` to `.env.local`. Only `VITE_APP_URL` is needed for the curre
 1. Add Supabase migrations for organizations, memberships, profiles, contacts, leads, pipeline stages, conversations, messages, knowledge, automations, notifications, audit events and billing records.
 2. Add Supabase Auth and server-side authorization/RLS tests before connecting live data.
 3. Move demo state behind repositories/services, preserving the current empty/loading/error states.
-4. Implement onboarding, inbox, pipeline drag/drop, AI configuration, automations and analytics as separate feature modules.
+4. Connect the existing CRM screens to Supabase and implement production inbox, AI configuration and automation execution services.
 5. Add official WhatsApp Cloud API webhook handling and provider adapters only after credentials are available.
 
 ## Demo data
 
-The current Acacia Properties workspace is clearly labelled demo data. It is local UI state only and does not represent a live customer or production integration.
+The current Acacia Properties workspace is clearly labelled demo data. Lead, contact, pipeline, note and follow-up changes persist in local browser storage so complete workflows can be tested safely. It does not represent a live customer or production integration; shared data still requires the Supabase adapter and credentials.
+
+## CRM workflows available
+
+- Create, search, filter, sort, assign, qualify and recoverably archive leads.
+- Open a lead profile, edit its details, add notes and schedule follow-ups.
+- Move opportunities through seven pipeline stages by drag and drop or accessible selectors.
+- Create, edit, tag and search contacts, with related lead history.
+- Open modules and leads through keyboard search (`Ctrl/Cmd + K`).
+- Use the responsive mobile navigation, notification centre and persistent dark theme.
 
 ## Repository
 
-This project is intentionally created as a fresh Git repository. Commit the initial foundation after reviewing it:
-
-```bash
-git add .
-git commit -m "chore: scaffold Nexara LeadFlow workspace"
-```
+The repository is maintained on the `master` branch at `cypskip-create/Nexara`.
