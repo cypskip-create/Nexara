@@ -75,3 +75,24 @@ test('AI and WhatsApp edge functions keep provider secrets server-side',async()=
   expect(outbound).toContain("requireSecret('WHATSAPP_ACCESS_TOKEN')")
   expect(env).not.toMatch(/VITE_(OPENAI|WHATSAPP)/)
 })
+
+test('team invitations, automation runs and notifications are server controlled',async()=>{
+  const [migration,team,automation,email,env]=await Promise.all([
+    readFile(resolve(root,'supabase/migrations/0008_team_automation_notifications.sql'),'utf8'),
+    readFile(resolve(root,'supabase/functions/team-invitations/index.ts'),'utf8'),
+    readFile(resolve(root,'supabase/functions/automation-run/index.ts'),'utf8'),
+    readFile(resolve(root,'supabase/functions/notification-email/index.ts'),'utf8'),
+    readFile(resolve(root,'.env.example'),'utf8'),
+  ])
+  expect(migration).toContain('function public.accept_invitation')
+  expect(migration).toContain("digest(invite_token,'sha256')")
+  expect(team).toContain('requireUser(request)')
+  expect(team).toContain("['OWNER','ADMIN'].includes")
+  expect(team).toContain('crypto.subtle.digest')
+  expect(automation).toContain("status:'RUNNING'")
+  expect(automation).toContain("status:'FAILED'")
+  expect(automation).toContain("activity_type:'AUTOMATION'")
+  expect(email).toContain('sendEmail')
+  expect(env).toContain('RESEND_API_KEY=')
+  expect(env).not.toContain('VITE_RESEND_API_KEY')
+})

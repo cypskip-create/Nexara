@@ -4,6 +4,7 @@ import { createContact, listContacts, updateContact as saveContact } from '../..
 import { addLeadNote, archiveLead, assignLead, createLead, listLeads, listWorkspaceActivity, moveLead as transitionLead, scheduleFollowUp, updateLeadFields } from '../../services/leads'
 import { listOrganizationMembers } from '../../services/organizations'
 import { completeTask as markTaskComplete, listTasks } from '../../services/tasks'
+import { runTriggeredAutomations } from '../../services/automations'
 import type { ContactRow, DatabaseLeadStage, LeadActivityRow, LeadRow, TaskRow } from '../../types/database'
 import type { ContactDraft, LeadDraft, LeadStage, OwnerOption, TimelineEntry, WorkspaceContact, WorkspaceLead, WorkspaceTask } from './types'
 
@@ -26,6 +27,7 @@ function activityLabel(date:string){
   if(elapsed<86_400_000)return `${Math.floor(elapsed/3_600_000)} hours ago`
   return new Date(date).toLocaleDateString()
 }
+function customFields(qualification:LeadRow['qualification']){if(!qualification||typeof qualification!=='object'||Array.isArray(qualification))return {};const fields=qualification.custom_fields;if(!fields||typeof fields!=='object'||Array.isArray(fields))return {};return Object.fromEntries(Object.entries(fields).filter((entry):entry is [string,string]=>typeof entry[1]==='string'))}
 
 export function useSupabaseWorkspaceData(organizationId:string|undefined,enabled:boolean){
   const [rows,setRows]=useState<LeadRow[]>([])
@@ -76,7 +78,7 @@ export function useSupabaseWorkspaceData(organizationId:string|undefined,enabled
 
   const mappedLeads=useMemo<WorkspaceLead[]>(()=>rows.map(lead=>{
     const contact=lead.contact_id?contactsById.get(lead.contact_id):undefined
-    return {id:lead.id,contactId:lead.contact_id,name:contact?.name??'Unnamed lead',email:contact?.email??'',phone:contact?.phone??'',company:contact?.company??'',interest:lead.interest??'No interest recorded',source:lead.source??'Manual',stage:stageFromDatabase[lead.stage],score:lead.score,value:money(lead.estimated_value),owner:lead.owner_id?ownerNames.get(lead.owner_id)??'Workspace member':'Unassigned',ownerId:lead.owner_id,tags:contact?.tags??[],createdAt:lead.created_at,lastActivity:activityLabel(lead.updated_at),nextAction:lead.next_action??'Make first contact',notes:activitiesByLead.get(lead.id)??[],archived:Boolean(lead.archived_at)}
+    return {id:lead.id,contactId:lead.contact_id,name:contact?.name??'Unnamed lead',email:contact?.email??'',phone:contact?.phone??'',company:contact?.company??'',interest:lead.interest??'No interest recorded',source:lead.source??'Manual',stage:stageFromDatabase[lead.stage],score:lead.score,value:money(lead.estimated_value),owner:lead.owner_id?ownerNames.get(lead.owner_id)??'Workspace member':'Unassigned',ownerId:lead.owner_id,tags:contact?.tags??[],customFields:customFields(lead.qualification),createdAt:lead.created_at,lastActivity:activityLabel(lead.updated_at),nextAction:lead.next_action??'Make first contact',notes:activitiesByLead.get(lead.id)??[],archived:Boolean(lead.archived_at)}
   }),[activitiesByLead,contactsById,ownerNames,rows])
   const leads=useMemo(()=>mappedLeads.filter(lead=>!lead.archived),[mappedLeads])
   const contacts=useMemo<WorkspaceContact[]>(()=>contactRows.map(contact=>{
@@ -86,13 +88,13 @@ export function useSupabaseWorkspaceData(organizationId:string|undefined,enabled
   const tasks=useMemo<WorkspaceTask[]>(()=>taskRows.map(task=>({id:task.id,leadId:task.lead_id,leadName:task.lead_id?mappedLeads.find(lead=>lead.id===task.lead_id)?.name??'Lead':'General task',title:task.title,description:task.description??'',dueAt:task.due_at,status:task.status==='OPEN'?'Open':task.status==='COMPLETED'?'Completed':'Cancelled',assignee:task.assigned_to?ownerNames.get(task.assigned_to)??'Workspace member':'Unassigned'})),[mappedLeads,ownerNames,taskRows])
 
   const run=async<T,>(operation:()=>Promise<T>)=>{setError('');try{const result=await operation();await refresh();return result}catch(reason){const message=reason instanceof Error?reason.message:'The workspace update failed.';setError(message);throw reason}}
-  const addLead=(draft:LeadDraft)=>run(async()=>{const created=await createLead({organizationId:organizationId!,name:draft.name,email:draft.email,phone:draft.phone,company:draft.company,interest:draft.interest,source:draft.source,stage:stageToDatabase[draft.stage],score:draft.score,estimatedValue:numericValue(draft.value),ownerId:draft.ownerId||null,nextAction:draft.nextAction,tags:draft.tags});return created.id})
+  const addLead=(draft:LeadDraft)=>run(async()=>{const created=await createLead({organizationId:organizationId!,name:draft.name,email:draft.email,phone:draft.phone,company:draft.company,interest:draft.interest,source:draft.source,stage:stageToDatabase[draft.stage],score:draft.score,estimatedValue:numericValue(draft.value),ownerId:draft.ownerId||null,nextAction:draft.nextAction,tags:draft.tags,qualification:{custom_fields:draft.customFields}});await runTriggeredAutomations(organizationId!,created.id,'LEAD_CREATED');return created.id})
   const updateLead=async(leadId:string,changes:Partial<WorkspaceLead>)=>run(async()=>{
     const current=mappedLeads.find(lead=>lead.id===leadId)
     if(!current)throw new Error('Lead not found.')
     if(changes.stage!==undefined&&changes.stage!==current.stage)await transitionLead(leadId,organizationId!,stageToDatabase[changes.stage])
     if((changes.ownerId!==undefined?changes.ownerId:null)!==current.ownerId&&(changes.ownerId!==undefined||changes.owner!==undefined))await assignLead(leadId,organizationId!,changes.ownerId||null)
-    if(changes.interest!==undefined||changes.source!==undefined||changes.score!==undefined||changes.value!==undefined||changes.nextAction!==undefined)await updateLeadFields(leadId,organizationId!,{interest:changes.interest,source:changes.source,score:changes.score,estimatedValue:changes.value===undefined?undefined:numericValue(changes.value),nextAction:changes.nextAction})
+    if(changes.interest!==undefined||changes.source!==undefined||changes.score!==undefined||changes.value!==undefined||changes.nextAction!==undefined||changes.customFields!==undefined){const raw=rows.find(lead=>lead.id===leadId)?.qualification;const base=raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{};await updateLeadFields(leadId,organizationId!,{interest:changes.interest,source:changes.source,score:changes.score,estimatedValue:changes.value===undefined?undefined:numericValue(changes.value),nextAction:changes.nextAction,qualification:changes.customFields===undefined?undefined:{...base,custom_fields:changes.customFields}})}
     if(current.contactId&&(changes.name!==undefined||changes.email!==undefined||changes.phone!==undefined||changes.company!==undefined||changes.tags!==undefined))await saveContact(current.contactId,organizationId!,{name:changes.name??current.name,email:changes.email??current.email,phone:changes.phone??current.phone,company:changes.company??current.company,tags:changes.tags??current.tags})
   })
   const moveLead=(leadId:string,stage:LeadStage)=>run(()=>transitionLead(leadId,organizationId!,stageToDatabase[stage]))

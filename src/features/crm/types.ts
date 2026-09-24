@@ -27,6 +27,7 @@ export type WorkspaceLead = {
   lastActivity: string
   nextAction: string
   notes: TimelineEntry[]
+  customFields: Record<string,string>
   archived?: boolean
 }
 
@@ -44,5 +45,5 @@ export type WorkspaceContact = {
   lastActivity: string
 }
 
-export type LeadDraft = Pick<WorkspaceLead, 'name' | 'email' | 'phone' | 'company' | 'interest' | 'source' | 'stage' | 'score' | 'value' | 'owner' | 'ownerId' | 'tags' | 'nextAction'>
+export type LeadDraft = Pick<WorkspaceLead, 'name' | 'email' | 'phone' | 'company' | 'interest' | 'source' | 'stage' | 'score' | 'value' | 'owner' | 'ownerId' | 'tags' | 'nextAction' | 'customFields'>
 export type ContactDraft = Pick<WorkspaceContact, 'name' | 'email' | 'phone' | 'company' | 'tags' | 'type'>
