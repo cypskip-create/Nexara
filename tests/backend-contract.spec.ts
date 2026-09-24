@@ -48,3 +48,30 @@ test('live workspace tables are published for realtime collaboration',async()=>{
   expect(sql).toContain("pubname = 'supabase_realtime'")
   expect(sql).toContain('alter publication supabase_realtime add table')
 })
+
+test('tenant isolation has executable role and cross-workspace assertions',async()=>{
+  const sql=await readFile(resolve(root,'supabase/tests/tenant_isolation.sql'),'utf8')
+  expect(sql).toContain('select plan(10)')
+  expect(sql).toContain("set local role authenticated")
+  expect(sql).toContain("request.jwt.claim.sub")
+  expect(sql).toContain('cross-tenant memberships are hidden')
+  expect(sql).toContain('cross-tenant profiles are hidden')
+  expect(sql).toContain('rollback;')
+})
+
+test('AI and WhatsApp edge functions keep provider secrets server-side',async()=>{
+  const [ai,webhook,outbound,env]=await Promise.all([
+    readFile(resolve(root,'supabase/functions/ai-qualify/index.ts'),'utf8'),
+    readFile(resolve(root,'supabase/functions/whatsapp-webhook/index.ts'),'utf8'),
+    readFile(resolve(root,'supabase/functions/whatsapp-send/index.ts'),'utf8'),
+    readFile(resolve(root,'.env.example'),'utf8'),
+  ])
+  expect(ai).toContain("requireSecret('OPENAI_API_KEY')")
+  expect(ai).toContain("type:'json_schema'")
+  expect(ai).toContain('requireUser(request)')
+  expect(webhook).toContain("x-hub-signature-256")
+  expect(webhook).toContain('verifyMetaSignature')
+  expect(outbound).toContain('requireUser(request)')
+  expect(outbound).toContain("requireSecret('WHATSAPP_ACCESS_TOKEN')")
+  expect(env).not.toMatch(/VITE_(OPENAI|WHATSAPP)/)
+})

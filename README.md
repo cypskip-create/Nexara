@@ -26,6 +26,7 @@ Screenshots and failure traces are written to the ignored `test-results/` direct
 The repository includes reproducible migrations for authentication profiles, organizations, role-based memberships, tenant-isolated CRM data, inbox entities, knowledge, automations, audit events, tasks, AI configuration, integrations, subscriptions and analytics events. Privileged CRM workflows use transactional PostgreSQL functions so the record change, timeline entry, audit event and analytics event remain consistent.
 
 See [backend foundation](docs/backend-foundation.md) for migration, authorization and production-verification guidance.
+See [server functions](docs/server-functions.md) for the AI qualification and WhatsApp webhook/delivery trust boundaries and required secrets.
 
 ## Public product experience
 
@@ -44,11 +45,11 @@ Copy `.env.example` to `.env.local`. Demo mode only needs `VITE_APP_URL`; authen
 
 ## Product implementation plan
 
-1. Run the migrations against a disposable Supabase project and complete live tenant-isolation tests.
-2. Connect session/workspace state to the typed CRM services while retaining explicit demo mode.
-3. Implement production inbox ingestion, AI execution and automation workers behind server-side endpoints.
-4. Add team invitations and onboarding persistence to the authenticated application journey.
-5. Add official WhatsApp Cloud API webhook handling and provider adapters only after credentials are available.
+1. Deploy the committed Edge Functions and configure provider secrets in Supabase.
+2. Complete provider-sandbox tests for OpenAI qualification and WhatsApp inbound/outbound delivery.
+3. Add team invitations and onboarding persistence to the authenticated application journey.
+4. Implement the automation execution worker and durable retry queue.
+5. Connect the live Inbox UI to persisted conversations and messages.
 
 ## Demo data
 
