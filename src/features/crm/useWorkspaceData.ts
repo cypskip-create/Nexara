@@ -13,23 +13,23 @@ const seedLeads: WorkspaceLead[] = [
 ]
 
 const seedContacts: WorkspaceContact[] = seedLeads.map(lead => ({ id:`contact-${lead.id}`, name:lead.name, email:lead.email, phone:lead.phone, company:lead.company, tags:lead.tags, type:lead.stage === 'Won' ? 'Customer' : 'Lead', lastActivity:lead.lastActivity }))
-type StoredWorkspace = { version:2; leads:WorkspaceLead[]; contacts:WorkspaceContact[] }
+type StoredWorkspace = { version:2; leads:WorkspaceLead[]; contacts:WorkspaceContact[]; tasks:WorkspaceTask[] }
+const seedTasks:WorkspaceTask[]=[{id:'demo-task-aisha',leadId:'lead-aisha',leadName:'Aisha Njeri',title:'Confirm Saturday viewing',description:'Follow up on the requested townhouse viewing.',dueAt:new Date(Date.now()+3_600_000).toISOString(),status:'Open',assignee:'Cyprian'}]
 
 function loadWorkspace(): StoredWorkspace {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
-    if (!stored) return { version:2, leads:seedLeads, contacts:seedContacts }
+    if (!stored) return { version:2, leads:seedLeads, contacts:seedContacts, tasks:seedTasks }
     const parsed = JSON.parse(stored) as StoredWorkspace
     if (parsed.version !== 2 || !Array.isArray(parsed.leads) || !Array.isArray(parsed.contacts)) throw new Error('Unsupported demo workspace')
-    return {...parsed,leads:parsed.leads.map(lead=>({...lead,customFields:lead.customFields??{}}))}
+    return {...parsed,tasks:Array.isArray(parsed.tasks)?parsed.tasks:seedTasks,leads:parsed.leads.map(lead=>({...lead,customFields:lead.customFields??{}}))}
   } catch {
-    return { version:2, leads:seedLeads, contacts:seedContacts }
+    return { version:2, leads:seedLeads, contacts:seedContacts, tasks:seedTasks }
   }
 }
 
 export function useWorkspaceData() {
   const [data,setData]=useState<StoredWorkspace>(loadWorkspace)
-  const [tasks,setTasks]=useState<WorkspaceTask[]>([{id:'demo-task-aisha',leadId:'lead-aisha',leadName:'Aisha Njeri',title:'Confirm Saturday viewing',description:'Follow up on the requested townhouse viewing.',dueAt:new Date(Date.now()+3_600_000).toISOString(),status:'Open',assignee:'Cyprian'}])
   const dataRef=useRef(data)
   useEffect(()=>localStorage.setItem(STORAGE_KEY,JSON.stringify(data)),[data])
   const commit=(change:(current:StoredWorkspace)=>StoredWorkspace)=>{
@@ -50,12 +50,12 @@ export function useWorkspaceData() {
   const updateLead=(leadId:string,changes:Partial<WorkspaceLead>,eventText?:string)=>commit(current=>({...current,leads:current.leads.map(lead=>lead.id===leadId?{...lead,...changes,lastActivity:'Just now',notes:eventText?[...lead.notes,append(changes.stage?'stage':'assignment',eventText)]:lead.notes}:lead)}))
   const moveLead=(leadId:string,stage:LeadStage)=>updateLead(leadId,{stage},`Stage changed to ${stage}`)
   const addNote=(leadId:string,text:string,kind:TimelineEntry['kind']='note')=>commit(current=>({...current,leads:current.leads.map(lead=>lead.id===leadId?{...lead,lastActivity:'Just now',notes:[...lead.notes,append(kind,text)]}:lead)}))
-  const addFollowUp=(leadId:string,dueAt:string)=>addNote(leadId,`Follow-up scheduled for ${new Date(dueAt).toLocaleString()}`,'follow-up')
+  const addFollowUp=(leadId:string,dueAt:string)=>commit(current=>{const lead=current.leads.find(item=>item.id===leadId);if(!lead)throw new Error('Lead not found');return {...current,leads:current.leads.map(item=>item.id===leadId?{...item,lastActivity:'Just now',notes:[...item.notes,append('follow-up',`Follow-up scheduled for ${new Date(dueAt).toLocaleString()}`)]}:item),tasks:[{id:id(),leadId,leadName:lead.name,title:'Lead follow-up',description:`Follow up with ${lead.name}`,dueAt,status:'Open' as const,assignee:lead.owner},...current.tasks]}})
   const archiveLeads=(leadIds:string[])=>commit(current=>({...current,leads:current.leads.map(lead=>leadIds.includes(lead.id)?{...lead,archived:true}:lead)}))
   const addContact=(draft:ContactDraft)=>commit(current=>{const existing=current.contacts.find(contact=>contactMatch(contact,draft));return existing?{...current,contacts:current.contacts.map(contact=>contact.id===existing.id?{...contact,name:contact.name||draft.name,email:contact.email||draft.email,phone:contact.phone||draft.phone,company:contact.company||draft.company,tags:[...new Set([...contact.tags,...draft.tags])],lastActivity:'Just now'}:contact)}:{...current,contacts:[{...draft,id:id(),lastActivity:'Just now'},...current.contacts]}})
   const updateContact=(contactId:string,changes:Partial<WorkspaceContact>)=>commit(current=>({...current,contacts:current.contacts.map(contact=>contact.id===contactId?{...contact,...changes,lastActivity:'Just now'}:contact)}))
-  const resetDemo=()=>commit(()=>({version:2,leads:seedLeads,contacts:seedContacts}))
-  const completeTask=(taskId:string)=>setTasks(current=>current.map(task=>task.id===taskId?{...task,status:'Completed'}:task))
+  const resetDemo=()=>commit(()=>({version:2,leads:seedLeads,contacts:seedContacts,tasks:seedTasks}))
+  const completeTask=(taskId:string)=>commit(current=>({...current,tasks:current.tasks.map(task=>task.id===taskId?{...task,status:'Completed'}:task)}))
   const owners:OwnerOption[]=['Cyprian','Sarah','David'].map(owner=>({id:owner,label:owner}))
-  return {leads:activeLeads,archivedLeads:data.leads.filter(lead=>lead.archived),contacts:data.contacts,tasks,owners,loading:false,error:'',refresh:async()=>{},addLead,updateLead,moveLead,addNote,addFollowUp,archiveLeads,addContact,updateContact,completeTask,resetDemo}
+  return {leads:activeLeads,archivedLeads:data.leads.filter(lead=>lead.archived),contacts:data.contacts,tasks:data.tasks,owners,loading:false,error:'',refresh:async()=>{},addLead,updateLead,moveLead,addNote,addFollowUp,archiveLeads,addContact,updateContact,completeTask,resetDemo}
 }

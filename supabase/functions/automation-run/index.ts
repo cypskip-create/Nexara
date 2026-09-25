@@ -23,7 +23,7 @@ Deno.serve(async request=>{
     const auth=internal?null:await requireUser(request)
     const client=internal?admin:auth!.client
     const userId=auth?.user.id??null
-    const {automationId,leadId,triggerEvent='MANUAL_TEST',attempt=1,retryOf}=await readJson<{automationId:string;leadId:string;triggerEvent?:string;attempt?:number;retryOf?:string}>(request)
+    const {automationId,leadId,triggerEvent='MANUAL_TEST',attempt=1,retryOf,dryRun=false}=await readJson<{automationId:string;leadId:string;triggerEvent?:string;attempt?:number;retryOf?:string;dryRun?:boolean}>(request)
     if(attempt<1||attempt>3)throw new Error('Invalid automation attempt.')
     const {data:automation,error:automationError}=await client.from('automations').select('*').eq('id',automationId).single()
     if(automationError||!automation)throw new Error('Automation not found.')
@@ -32,12 +32,16 @@ Deno.serve(async request=>{
     if(leadError||!lead)throw new Error('Lead not found.')
     const {data:steps,error:stepError}=await client.from('automation_steps').select('*').eq('automation_id',automationId).order('position')
     if(stepError)throw stepError
+    const typedLead=lead as Lead
+    const typedSteps=(steps??[]) as Step[]
+    if(!typedSteps.some(step=>step.step_type==='ACTION'))throw new Error('Automation has no action.')
+    if(typedSteps.some(step=>step.step_type==='ACTION'&&!['assign_owner','set_stage','create_task','notify_owner'].includes(String(step.config.type))))throw new Error('Automation has an unsupported action.')
+    const matches=!typedSteps.filter(step=>step.step_type==='CONDITION').some(step=>!conditionPasses(step.config,typedLead))
+    if(dryRun||triggerEvent==='MANUAL_TEST')return json({status:matches?'MATCHED':'SKIPPED',dryRun:true,actions:matches?typedSteps.filter(step=>step.step_type==='ACTION').map(step=>step.config.type):[]})
     const {data:run,error:runError}=await admin.from('automation_runs').insert({organization_id:automation.organization_id,automation_id:automationId,lead_id:leadId,status:'RUNNING',trigger_event:triggerEvent,input:{leadId},attempt,max_attempts:3,retry_of:retryOf??null}).select().single()
     if(runError)throw runError
     runId=run.id
-    const typedLead=lead as Lead
-    const typedSteps=(steps??[]) as Step[]
-    if(typedSteps.filter(step=>step.step_type==='CONDITION').some(step=>!conditionPasses(step.config,typedLead))){
+    if(!matches){
       await admin.from('automation_runs').update({status:'SKIPPED',output:{reason:'Conditions did not match.'},finished_at:new Date().toISOString()}).eq('id',runId)
       return json({status:'SKIPPED',runId})
     }

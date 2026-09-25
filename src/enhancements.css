@@ -174,3 +174,23 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible { 
 @media(max-width:720px){.app .content{padding:24px 16px}.app .page-heading{align-items:flex-start}.app .page-heading h1{font-size:30px}.app .subheading{font-size:14px}.app .metric-grid{grid-template-columns:1fr 1fr}.app .settings-form{grid-template-columns:1fr}.app .webhook-form fieldset{display:grid}.app .topbar{padding:0 16px}.app .search{width:38px;font-size:0;padding:5px}.app .search span{margin:0}.app .search kbd{display:none}.app .top-actions{gap:5px}}
 @media(max-width:500px){.app .mobile-brand strong,.app .top-actions>.avatar{display:none}}
 @media(max-width:420px){.app .metric-grid{grid-template-columns:1fr}.app .page-heading .btn{width:100%}.app .knowledge-card,.app .integration-card{min-height:auto}}
+.app .demo-followup{display:grid;gap:7px;margin:12px 0;font-size:12px;color:var(--muted)}
+.app .demo-followup input{width:100%;padding:8px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.app .message.note{align-self:center;width:min(90%,520px)}
+.app .message.note p{background:#fff8df;color:#70581d;border:1px solid #ead998}
+.app .demo-question{display:flex;align-items:center;gap:10px;margin:10px 20px}
+.app .demo-question>span{color:var(--primary);font-weight:700}
+.app .demo-question input{flex:1;min-width:0;padding:9px 11px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.app .demo-question>button:not(.btn){border:0;background:transparent;color:var(--muted);font-size:22px}
+.app .demo-setup-guide{margin-top:18px;padding-bottom:18px}
+.app .demo-setup-guide ol{margin:18px 28px;color:var(--ink);line-height:1.9;font-size:13px}
+.app .demo-activity{padding:34px 22px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.app .demo-activity strong{font:800 42px 'Plus Jakarta Sans'}
+.app .demo-activity span{color:var(--muted)}
+.app .demo-activity button{margin-left:auto}
+.app .automation-builder .workflow-block{margin-top:12px}
+.app .automation-builder .workflow-block>p,.app .automation-builder .workflow-block>small{display:block;color:var(--muted);font-size:12px;margin:7px 0 0}
+.app .automation-builder .workflow-block>select{width:100%;margin-top:9px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px}
+.app .automation-builder .workflow-block>label{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;font-size:13px}
+.app .automation-builder .workflow-block>label input{width:90px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px}
+.app.dark .message.note p{background:#423a22;color:#ffe8a9;border-color:#66552b}

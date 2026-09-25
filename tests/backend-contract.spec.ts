@@ -5,6 +5,16 @@ import { resolve } from 'node:path'
 const root=resolve(import.meta.dirname,'..')
 const migrationPath=resolve(root,'supabase/migrations/0004_secure_product_backend.sql')
 
+test('workflow creation is atomic and previews are side-effect free',async()=>{
+  const [sql,runner]=await Promise.all([readFile(resolve(root,'supabase/migrations/0012_automation_workflow_commands.sql'),'utf8'),readFile(resolve(root,'supabase/functions/automation-run/index.ts'),'utf8')])
+  expect(sql).toContain('create_automation_workflow')
+  expect(sql).toContain('public.has_org_role')
+  expect(sql).toContain('insert into public.automation_steps')
+  expect(sql).toContain('grant execute on function public.create_automation_workflow')
+  expect(runner.indexOf("if(dryRun||triggerEvent==='MANUAL_TEST')return json(")).toBeGreaterThan(0)
+  expect(runner.indexOf("if(dryRun||triggerEvent==='MANUAL_TEST')return json(")).toBeLessThan(runner.indexOf("admin.from('automation_runs').insert"))
+})
+
 test('all new tenant-owned tables enable row-level security',async()=>{
   const [sql,profileSecurity]=await Promise.all([readFile(migrationPath,'utf8'),readFile(resolve(root,'supabase/migrations/0005_profile_security.sql'),'utf8')])
   const tables=['invitations','lead_activities','tasks','ai_configs','automation_runs','integrations','subscriptions','analytics_events']

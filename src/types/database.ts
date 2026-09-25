@@ -67,6 +67,7 @@ export interface Database {
       send_conversation_message: { Args:{ target_org:string; target_conversation:string; message_body:string }; Returns:Message }
       mark_conversation_read: { Args:{ target_org:string; target_conversation:string }; Returns:string }
       update_organization_settings: { Args:{ target_org:string; organization_name:string; organization_industry:string; organization_website:string; organization_phone:string; organization_country:string; organization_timezone:string }; Returns:Organization }
+      create_automation_workflow: { Args:{ target_org:string; workflow_name:string; minimum_score:number; action_type:string; delay_hours:number }; Returns:Automation }
     }
     Enums: { member_role:MemberRole; lead_stage:DatabaseLeadStage }
     CompositeTypes: Record<string, never>
