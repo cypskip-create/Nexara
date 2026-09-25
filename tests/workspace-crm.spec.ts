@@ -112,6 +112,15 @@ test('contact creation, editing and relationship history work', async ({ page })
   await expect(page.locator('.contacts-table tbody tr')).toContainText('1')
 })
 
+test('contact identity deduplicates matching email and normalized phone',async({page})=>{
+  await page.locator('.sidebar nav').getByRole('button',{name:'Contacts'}).click()
+  for(const [name,email,phone] of [['First Record','same@example.com','+254 700 123 456'],['Duplicate Email','SAME@example.com',''],['Duplicate Phone','','254700123456']]){
+    await page.getByRole('button',{name:'Add contact'}).click();const dialog=page.getByRole('dialog',{name:'Add contact'});await dialog.getByLabel('Full name').fill(name);if(email)await dialog.getByLabel('Email',{exact:true}).fill(email);if(phone)await dialog.getByLabel('Phone').fill(phone);await dialog.getByRole('button',{name:'Save contact'}).click()
+  }
+  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('nexara-demo-workspace-v2')!))
+  expect(saved.contacts.filter((contact:{email:string;phone:string})=>contact.email.toLowerCase()==='same@example.com'||contact.phone.replace(/\D/g,'')==='254700123456')).toHaveLength(1)
+})
+
 test('follow-up tasks can be reviewed, opened and completed',async({page})=>{
   await page.locator('.sidebar nav').getByRole('button',{name:'Tasks'}).click()
   await expect(page.getByRole('heading',{name:'Tasks'})).toBeVisible()

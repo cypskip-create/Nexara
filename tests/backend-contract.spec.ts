@@ -96,3 +96,24 @@ test('team invitations, automation runs and notifications are server controlled'
   expect(env).toContain('RESEND_API_KEY=')
   expect(env).not.toContain('VITE_RESEND_API_KEY')
 })
+
+test('billing, public enquiries and contact deduplication stay server controlled',async()=>{
+  const [migration,billing,webhook,inquiry,contacts,env]=await Promise.all([
+    readFile(resolve(root,'supabase/migrations/0009_billing_dedupe_public_inquiries.sql'),'utf8'),readFile(resolve(root,'supabase/functions/billing/index.ts'),'utf8'),readFile(resolve(root,'supabase/functions/stripe-webhook/index.ts'),'utf8'),readFile(resolve(root,'supabase/functions/public-inquiry/index.ts'),'utf8'),readFile(resolve(root,'src/services/contacts.ts'),'utf8'),readFile(resolve(root,'.env.example'),'utf8'),
+  ])
+  expect(migration).toContain('create table public.contact_identities')
+  expect(migration).toContain('primary key(organization_id,identity_type,identity_value)')
+  expect(migration).toContain('function public.upsert_contact')
+  expect(contacts).toContain("rpc('upsert_contact'")
+  expect(contacts).toContain("rpc('update_contact'")
+  expect(migration).not.toContain('delete from public.contacts')
+  expect(migration).toContain('alter table public.website_inquiries enable row level security')
+  expect(migration).toContain('revoke all on public.website_inquiries from anon,authenticated')
+  expect(inquiry).toContain("Deno.env.get('INQUIRY_HASH_SECRET')")
+  expect(inquiry).toContain("requireSecret('SUPABASE_SERVICE_ROLE_KEY')")
+  expect(billing).toContain("requireSecret('STRIPE_SECRET_KEY')")
+  expect(billing).toContain("['OWNER','ADMIN'].includes")
+  expect(webhook).toContain("requireSecret('STRIPE_WEBHOOK_SECRET')")
+  expect(webhook).toContain('stripe-signature')
+  expect(env).not.toMatch(/VITE_(STRIPE|INQUIRY)/)
+})

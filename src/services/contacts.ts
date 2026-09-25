@@ -17,7 +17,7 @@ export async function listContacts(organizationId:string,search=''):Promise<Cont
 export async function createContact(organizationId:string,input:ContactInput):Promise<ContactRow> {
   const contact=normalize(input)
   if(!contact.name)throw new Error('Contact name is required.')
-  const {data,error}=await requireSupabase().from('contacts').insert({organization_id:organizationId,...contact}).select().single()
+  const {data,error}=await requireSupabase().rpc('upsert_contact',{target_org:organizationId,contact_name:contact.name,contact_email:contact.email,contact_phone:contact.phone,contact_company:contact.company,contact_tags:contact.tags})
   if(error)throwServiceError(error,'Unable to create the contact.')
   return data
 }
@@ -25,7 +25,7 @@ export async function createContact(organizationId:string,input:ContactInput):Pr
 export async function updateContact(contactId:string,organizationId:string,input:ContactInput):Promise<ContactRow> {
   const contact=normalize(input)
   if(!contact.name)throw new Error('Contact name is required.')
-  const {data,error}=await requireSupabase().from('contacts').update(contact).eq('id',contactId).eq('organization_id',organizationId).select().single()
+  const {data,error}=await requireSupabase().rpc('update_contact',{target_contact:contactId,target_org:organizationId,contact_name:contact.name,contact_email:contact.email,contact_phone:contact.phone,contact_company:contact.company,contact_tags:contact.tags})
   if(error)throwServiceError(error,'Unable to update the contact.')
   return data
 }

@@ -87,7 +87,7 @@ test('product demos respond to choices without changing workspace data', async (
   await expect(page.locator('.lf-live-report')).toHaveCount(0)
 })
 
-test('FAQ, footer dialogs and keyboard controls', async ({ page }) => {
+test('FAQ, separate legal pages and keyboard controls', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')
   const questions = page.locator('.lf-accordion h3 button')
@@ -100,16 +100,25 @@ test('FAQ, footer dialogs and keyboard controls', async ({ page }) => {
     await question.click()
     await expect(answer).toBeHidden()
   }
-  const privacy = page.locator('footer').getByRole('button', { name: 'Privacy', exact: true })
+  const privacy = page.locator('footer').getByRole('link', { name: 'Privacy', exact: true })
   await privacy.click()
-  await expect(page.getByRole('dialog')).toContainText('Draft for legal review')
-  await page.keyboard.press('Escape')
-  await expect(page.getByRole('dialog')).toHaveCount(0)
-  await expect(privacy).toBeFocused()
+  await expect(page).toHaveURL(/\/privacy$/)
+  await expect(page.getByRole('heading',{name:'Privacy notice'})).toBeVisible()
+  await page.goto('/')
   const stage = page.locator('.lf-journey-stages button').nth(2)
   await stage.focus()
   await expect(stage).toHaveAttribute('aria-pressed', 'true')
   await expect(page.locator('.lf-journey-detail')).toContainText('AI qualification')
+})
+
+test('public company, solutions and contact pages are functional',async({page})=>{
+  await page.goto('/about');await expect(page.getByRole('heading',{name:/A clearer path/})).toBeVisible()
+  await page.goto('/solutions');await expect(page.getByRole('heading',{name:/One sales workflow/})).toBeVisible();await expect(page.locator('.solution-cards article')).toHaveCount(7)
+  await page.route('**/functions/v1/public-inquiry',route=>route.fulfill({status:201,contentType:'application/json',body:'{"received":true}'}))
+  await page.goto('/contact?type=demo')
+  await page.getByLabel('Full name').fill('Test User');await page.getByLabel('Work email').fill('test@example.com');await page.getByLabel('How can we help?').fill('We need a product walkthrough.')
+  await page.getByRole('button',{name:/Request demo/}).click();await expect(page.getByRole('status')).toContainText('Request received')
+  await page.goto('/terms');await expect(page.getByRole('heading',{name:'Service terms'})).toBeVisible()
 })
 
 test('mobile navigation opens, closes and preserves accessible focus', async ({ page }) => {

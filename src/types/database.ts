@@ -14,6 +14,7 @@ type Automation = { id:string; organization_id:string; name:string; status:'DRAF
 type AutomationStep = { id:string; automation_id:string; organization_id:string; step_type:'CONDITION'|'ACTION'; position:number; config:Json; created_at:string }
 type AutomationRun = { id:string; organization_id:string; automation_id:string; lead_id:string|null; status:'RUNNING'|'SUCCEEDED'|'FAILED'|'SKIPPED'; trigger_event:string; input:Json; output:Json; error_code:string|null; started_at:string; finished_at:string|null }
 type Notification = { id:string; organization_id:string; user_id:string; kind:string; title:string; body:string|null; read_at:string|null; created_at:string }
+type Subscription = { id:string; organization_id:string; plan:'STARTER'|'GROWTH'|'PRO'; status:'TRIALING'|'ACTIVE'|'PAST_DUE'|'CANCELLED'|'INCOMPLETE'; billing_interval:'MONTHLY'|'YEARLY'; provider:string|null; provider_customer_id:string|null; provider_subscription_id:string|null; trial_ends_at:string|null; current_period_ends_at:string|null; created_at:string; updated_at:string }
 
 type Table<Row, Insert = Partial<Row>, Update = Partial<Insert>> = { Row:Row; Insert:Insert; Update:Update; Relationships:[] }
 
@@ -32,6 +33,7 @@ export interface Database {
       automation_steps: Table<AutomationStep, Pick<AutomationStep,'automation_id'|'organization_id'|'step_type'> & Partial<AutomationStep>>
       automation_runs: Table<AutomationRun, Pick<AutomationRun,'organization_id'|'automation_id'|'status'|'trigger_event'> & Partial<AutomationRun>>
       notifications: Table<Notification, Pick<Notification,'organization_id'|'user_id'|'kind'|'title'> & Partial<Notification>>
+      subscriptions: Table<Subscription, Pick<Subscription,'organization_id'> & Partial<Subscription>>
     }
     Views: Record<string, never>
     Functions: {
@@ -43,6 +45,8 @@ export interface Database {
       schedule_lead_follow_up: { Args:{ target_lead:string; target_org:string; task_title:string; task_due_at:string; task_assignee?:string|null }; Returns:Task }
       archive_lead: { Args:{ target_lead:string; target_org:string }; Returns:Lead }
       accept_invitation: { Args:{ invite_token:string }; Returns:string }
+      upsert_contact: { Args:{ target_org:string; contact_name:string; contact_email?:string|null; contact_phone?:string|null; contact_company?:string|null; contact_tags?:string[] }; Returns:Contact }
+      update_contact: { Args:{ target_contact:string; target_org:string; contact_name:string; contact_email?:string|null; contact_phone?:string|null; contact_company?:string|null; contact_tags?:string[] }; Returns:Contact }
     }
     Enums: { member_role:MemberRole; lead_stage:DatabaseLeadStage }
     CompositeTypes: Record<string, never>
@@ -59,3 +63,4 @@ export type AutomationRow = Automation
 export type AutomationStepRow = AutomationStep
 export type AutomationRunRow = AutomationRun
 export type NotificationRow = Notification
+export type SubscriptionRow = Subscription

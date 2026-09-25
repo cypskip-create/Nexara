@@ -4,6 +4,7 @@ import type { ContactDraft, LeadDraft, LeadStage, OwnerOption, TimelineEntry, Wo
 const STORAGE_KEY = 'nexara-demo-workspace-v2'
 const now = () => new Date().toISOString()
 const id = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`
+const contactMatch=(left:{email:string;phone:string},right:{email:string;phone:string})=>Boolean(left.email.trim()&&left.email.trim().toLowerCase()===right.email.trim().toLowerCase()||left.phone.replaceAll(/\D/g,'')&&left.phone.replaceAll(/\D/g,'')===right.phone.replaceAll(/\D/g,''))
 
 const seedLeads: WorkspaceLead[] = [
   { id:'lead-james', name:'James Mwangi', email:'james@example.com', phone:'+254 712 345 678', company:'Individual buyer', interest:'3-bedroom apartment · Kilimani', source:'Website', stage:'Qualified', score:86, value:'KSh 18–22M', owner:'Cyprian', ownerId:'Cyprian', tags:['High intent','Kilimani'], customFields:{'Preferred move':'December',Financing:'Pre-approved'}, createdAt:'2026-09-22T07:30:00.000Z', lastActivity:'2 min ago', nextAction:'Arrange a viewing', notes:[{id:'event-james',kind:'created',text:'Lead created from website conversation',at:'2026-09-22T07:30:00.000Z'}] },
@@ -43,7 +44,7 @@ export function useWorkspaceData() {
   const addLead=(draft:LeadDraft)=>{
     const leadId=id()
     const lead:WorkspaceLead={...draft,id:leadId,createdAt:now(),lastActivity:'Just now',notes:[append('created',`Lead created from ${draft.source}`)]}
-    commit(current=>({...current,leads:[lead,...current.leads],contacts:current.contacts.some(contact=>contact.email&&contact.email===lead.email)?current.contacts:[{id:id(),name:lead.name,email:lead.email,phone:lead.phone,company:lead.company,tags:lead.tags,type:'Lead',lastActivity:'Just now'},...current.contacts]}))
+    commit(current=>({...current,leads:[lead,...current.leads],contacts:current.contacts.some(contact=>contactMatch(contact,lead))?current.contacts:[{id:id(),name:lead.name,email:lead.email,phone:lead.phone,company:lead.company,tags:lead.tags,type:'Lead',lastActivity:'Just now'},...current.contacts]}))
     return leadId
   }
   const updateLead=(leadId:string,changes:Partial<WorkspaceLead>,eventText?:string)=>commit(current=>({...current,leads:current.leads.map(lead=>lead.id===leadId?{...lead,...changes,lastActivity:'Just now',notes:eventText?[...lead.notes,append(changes.stage?'stage':'assignment',eventText)]:lead.notes}:lead)}))
@@ -51,7 +52,7 @@ export function useWorkspaceData() {
   const addNote=(leadId:string,text:string,kind:TimelineEntry['kind']='note')=>commit(current=>({...current,leads:current.leads.map(lead=>lead.id===leadId?{...lead,lastActivity:'Just now',notes:[...lead.notes,append(kind,text)]}:lead)}))
   const addFollowUp=(leadId:string,dueAt:string)=>addNote(leadId,`Follow-up scheduled for ${new Date(dueAt).toLocaleString()}`,'follow-up')
   const archiveLeads=(leadIds:string[])=>commit(current=>({...current,leads:current.leads.map(lead=>leadIds.includes(lead.id)?{...lead,archived:true}:lead)}))
-  const addContact=(draft:ContactDraft)=>commit(current=>({...current,contacts:[{...draft,id:id(),lastActivity:'Just now'},...current.contacts]}))
+  const addContact=(draft:ContactDraft)=>commit(current=>{const existing=current.contacts.find(contact=>contactMatch(contact,draft));return existing?{...current,contacts:current.contacts.map(contact=>contact.id===existing.id?{...contact,name:contact.name||draft.name,email:contact.email||draft.email,phone:contact.phone||draft.phone,company:contact.company||draft.company,tags:[...new Set([...contact.tags,...draft.tags])],lastActivity:'Just now'}:contact)}:{...current,contacts:[{...draft,id:id(),lastActivity:'Just now'},...current.contacts]}})
   const updateContact=(contactId:string,changes:Partial<WorkspaceContact>)=>commit(current=>({...current,contacts:current.contacts.map(contact=>contact.id===contactId?{...contact,...changes,lastActivity:'Just now'}:contact)}))
   const resetDemo=()=>commit(()=>({version:2,leads:seedLeads,contacts:seedContacts}))
   const completeTask=(taskId:string)=>setTasks(current=>current.map(task=>task.id===taskId?{...task,status:'Completed'}:task))
