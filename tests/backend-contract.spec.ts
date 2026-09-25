@@ -145,3 +145,33 @@ test('inbox, knowledge, AI settings and integration state are persistent and ten
   expect(sharedSupabase).toContain("required('SUPABASE_SERVICE_ROLE_KEY')")
   expect(check).not.toContain('VITE_WHATSAPP')
 })
+
+test('operational retries, workspace settings and signed webhooks are server controlled',async()=>{
+  const [migration,runner,retry,webhookConfig,webhookDelivery,config,env,settings]=await Promise.all([
+    readFile(resolve(root,'supabase/migrations/0011_operational_reliability.sql'),'utf8'),
+    readFile(resolve(root,'supabase/functions/automation-run/index.ts'),'utf8'),
+    readFile(resolve(root,'supabase/functions/automation-retry/index.ts'),'utf8'),
+    readFile(resolve(root,'supabase/functions/webhook-config/index.ts'),'utf8'),
+    readFile(resolve(root,'supabase/functions/webhook-delivery/index.ts'),'utf8'),
+    readFile(resolve(root,'supabase/config.toml'),'utf8'),
+    readFile(resolve(root,'.env.example'),'utf8'),
+    readFile(resolve(root,'src/services/organizations.ts'),'utf8'),
+  ])
+  expect(migration).toContain('next_retry_at timestamptz')
+  expect(migration).toContain('alter table public.webhook_endpoints enable row level security')
+  expect(migration).toContain("array['OWNER','ADMIN']::public.member_role[]")
+  expect(migration).toContain('function public.update_organization_settings')
+  expect(settings).toContain("rpc('update_organization_settings'")
+  expect(runner).toContain("Deno.env.get('AUTOMATION_CRON_SECRET')")
+  expect(runner).toContain('retry_scheduled:shouldRetry')
+  expect(retry).toContain("requireSecret('AUTOMATION_CRON_SECRET')")
+  expect(webhookConfig).toContain('requireUser(request)')
+  expect(webhookConfig).toContain("url.protocol!=='https:'")
+  expect(webhookDelivery).toContain("hash:'SHA-256'")
+  expect(webhookDelivery).toContain("requireSecret('WEBHOOK_SIGNING_SECRET')")
+  expect(config).toContain('[functions.automation-retry]')
+  expect(config).toContain('[functions.webhook-delivery]')
+  expect(env).toContain('AUTOMATION_CRON_SECRET=')
+  expect(env).toContain('WEBHOOK_SIGNING_SECRET=')
+  expect(env).not.toMatch(/VITE_(AUTOMATION|WEBHOOK)/)
+})

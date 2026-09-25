@@ -1,6 +1,6 @@
 # Nexara LeadFlow
 
-Nexara LeadFlow is a multi-tenant lead capture, qualification, CRM, automation and analytics platform for SMEs. The current product includes a polished responsive workspace, persistent browser-based demo CRM, authenticated live CRM, shared Inbox, Knowledge Base, AI Assistant settings, integration health, lead and contact management, an interactive pipeline, lead activity timelines, global search, notifications, theme switching, analytics, and a motion-rich public landing experience.
+Nexara LeadFlow is a multi-tenant lead capture, qualification, CRM, automation and analytics platform for SMEs. The current product includes a polished responsive workspace, persistent browser-based demo CRM, authenticated live CRM, shared Inbox, Knowledge Base, AI Assistant settings, integration health, signed outbound webhooks, durable automation retries, persistent organization settings, lead and contact management, an interactive pipeline, lead activity timelines, global search, notifications, theme switching, analytics, and a motion-rich public landing experience.
 
 ## Stack
 
@@ -49,8 +49,8 @@ Copy `.env.example` to `.env.local`. Demo mode only needs `VITE_APP_URL`; authen
 1. Configure the deferred email sender and production application origin in Supabase.
 2. Complete provider-sandbox tests for OpenAI qualification and WhatsApp inbound/outbound delivery.
 3. Add OAuth/channel onboarding for integrations that require customer-owned credentials.
-4. Add durable scheduling and retry execution around automation runs.
-5. Implement signed outbound webhook destinations and delivery history.
+4. Schedule `automation-retry` with the chosen production scheduler after configuring its shared secret.
+5. Complete end-to-end provider certification with production WhatsApp, email, AI and Stripe accounts.
 
 ## Demo data
 

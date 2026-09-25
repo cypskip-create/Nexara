@@ -12,7 +12,7 @@ type Task = { id:string; organization_id:string; lead_id:string|null; assigned_t
 type Invitation = { id:string; organization_id:string; email:string; role:MemberRole; token_hash:string; invited_by:string; expires_at:string; accepted_at:string|null; created_at:string }
 type Automation = { id:string; organization_id:string; name:string; status:'DRAFT'|'ACTIVE'|'PAUSED'|'ERROR'; trigger_type:string; created_by:string|null; created_at:string; updated_at:string }
 type AutomationStep = { id:string; automation_id:string; organization_id:string; step_type:'CONDITION'|'ACTION'; position:number; config:Json; created_at:string }
-type AutomationRun = { id:string; organization_id:string; automation_id:string; lead_id:string|null; status:'RUNNING'|'SUCCEEDED'|'FAILED'|'SKIPPED'; trigger_event:string; input:Json; output:Json; error_code:string|null; started_at:string; finished_at:string|null }
+type AutomationRun = { id:string; organization_id:string; automation_id:string; lead_id:string|null; status:'RUNNING'|'SUCCEEDED'|'FAILED'|'SKIPPED'; trigger_event:string; input:Json; output:Json; error_code:string|null; attempt:number; max_attempts:number; next_retry_at:string|null; retry_of:string|null; started_at:string; finished_at:string|null }
 type Notification = { id:string; organization_id:string; user_id:string; kind:string; title:string; body:string|null; read_at:string|null; created_at:string }
 type Subscription = { id:string; organization_id:string; plan:'STARTER'|'GROWTH'|'PRO'; status:'TRIALING'|'ACTIVE'|'PAST_DUE'|'CANCELLED'|'INCOMPLETE'; billing_interval:'MONTHLY'|'YEARLY'; provider:string|null; provider_customer_id:string|null; provider_subscription_id:string|null; trial_ends_at:string|null; current_period_ends_at:string|null; created_at:string; updated_at:string }
 type Conversation = { id:string; organization_id:string; contact_id:string|null; channel:'WEBSITE'|'WHATSAPP'|'EMAIL'|'API'; status:'OPEN'|'CLOSED'|'SNOOZED'; assigned_to:string|null; last_message_at:string|null; created_at:string; updated_at:string }
@@ -21,6 +21,8 @@ type ConversationRead = { organization_id:string; conversation_id:string; user_i
 type KnowledgeItem = { id:string; organization_id:string; title:string; item_type:'FAQ'|'PRODUCT'|'SERVICE'|'POLICY'|'GENERAL'|'DOCUMENT'; content:string; status:'ACTIVE'|'DRAFT'|'ARCHIVED'; metadata:Json; created_at:string; updated_at:string }
 type AiConfig = { id:string; organization_id:string; assistant_name:string; role_description:string; welcome_message:string|null; tone:'PROFESSIONAL'|'FRIENDLY'|'CONCISE'|'CUSTOM'; custom_instructions:string|null; qualification_fields:string[]; escalation_rules:Json; business_hours:Json; enabled:boolean; created_at:string; updated_at:string }
 type Integration = { id:string; organization_id:string; provider:'WHATSAPP'|'WEBSITE'|'EMAIL'|'WEBHOOK'; status:'SETUP_REQUIRED'|'CONNECTED'|'ERROR'|'DISABLED'; public_config:Json; secret_reference:string|null; last_error_code:string|null; connected_at:string|null; created_at:string; updated_at:string }
+type WebhookEndpoint = { id:string; organization_id:string; url:string; events:string[]; enabled:boolean; created_by:string|null; created_at:string; updated_at:string }
+type WebhookDelivery = { id:string; organization_id:string; endpoint_id:string; event_type:string; event_id:string; status:'PENDING'|'SUCCEEDED'|'FAILED'; response_status:number|null; attempt:number; error_code:string|null; created_at:string; delivered_at:string|null }
 
 type Table<Row, Insert = Partial<Row>, Update = Partial<Insert>> = { Row:Row; Insert:Insert; Update:Update; Relationships:[] }
 
@@ -46,6 +48,8 @@ export interface Database {
       knowledge_items: Table<KnowledgeItem, Pick<KnowledgeItem,'organization_id'|'title'|'item_type'|'content'> & Partial<KnowledgeItem>>
       ai_configs: Table<AiConfig, Pick<AiConfig,'organization_id'> & Partial<AiConfig>>
       integrations: Table<Integration, Pick<Integration,'organization_id'|'provider'> & Partial<Integration>>
+      webhook_endpoints: Table<WebhookEndpoint, Pick<WebhookEndpoint,'organization_id'|'url'> & Partial<WebhookEndpoint>>
+      webhook_deliveries: Table<WebhookDelivery, Pick<WebhookDelivery,'organization_id'|'endpoint_id'|'event_type'|'status'> & Partial<WebhookDelivery>>
     }
     Views: Record<string, never>
     Functions: {
@@ -62,6 +66,7 @@ export interface Database {
       create_conversation: { Args:{ target_org:string; target_contact:string|null; conversation_channel?:string }; Returns:Conversation }
       send_conversation_message: { Args:{ target_org:string; target_conversation:string; message_body:string }; Returns:Message }
       mark_conversation_read: { Args:{ target_org:string; target_conversation:string }; Returns:string }
+      update_organization_settings: { Args:{ target_org:string; organization_name:string; organization_industry:string; organization_website:string; organization_phone:string; organization_country:string; organization_timezone:string }; Returns:Organization }
     }
     Enums: { member_role:MemberRole; lead_stage:DatabaseLeadStage }
     CompositeTypes: Record<string, never>
@@ -85,3 +90,5 @@ export type ConversationReadRow = ConversationRead
 export type KnowledgeItemRow = KnowledgeItem
 export type AiConfigRow = AiConfig
 export type IntegrationRow = Integration
+export type WebhookEndpointRow = WebhookEndpoint
+export type WebhookDeliveryRow = WebhookDelivery

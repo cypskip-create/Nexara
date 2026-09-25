@@ -40,3 +40,10 @@ export async function updateOnboarding(organizationId:string,step:number,complet
   if(error)throwServiceError(error,'Unable to save onboarding progress.')
   return data
 }
+
+export type OrganizationSettingsInput={name:string;industry:string;website:string;phone:string;country:string;timezone:string}
+export async function saveOrganizationSettings(organizationId:string,input:OrganizationSettingsInput):Promise<OrganizationRow>{
+  const {data,error}=await requireSupabase().rpc('update_organization_settings',{target_org:organizationId,organization_name:input.name,organization_industry:input.industry,organization_website:input.website,organization_phone:input.phone,organization_country:input.country,organization_timezone:input.timezone})
+  if(error)throwServiceError(error,'Unable to save organization settings.')
+  return data
+}
