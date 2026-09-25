@@ -1,0 +1,62 @@
+import {expect,test} from '@playwright/test'
+
+test.beforeEach(async({page})=>{
+  await page.goto('/#app')
+  await page.evaluate(()=>{sessionStorage.setItem('nexara-demo-mode','true');localStorage.removeItem('nexara-demo-modules-v1');localStorage.removeItem('nexara-demo-workspace-v2')})
+  await page.reload()
+})
+
+test('team work queue creates, edits, filters and cancels assigned work',async({page})=>{
+  await page.locator('.sidebar nav').getByRole('button',{name:'Tasks'}).click()
+  await page.getByRole('button',{name:'New task'}).click()
+  await page.getByLabel('Task title').fill('Prepare campaign performance review')
+  await page.getByLabel('Brief / expected outcome').fill('Summarize conversion quality and agree the next sprint.')
+  await page.getByLabel('Priority').selectOption('Urgent')
+  await page.getByLabel('Related lead').selectOption('lead-james')
+  await page.getByLabel('Assignee').selectOption('Sarah')
+  await page.getByRole('button',{name:'Create task'}).click()
+  await expect(page.locator('.task-list')).toContainText('Prepare campaign performance review')
+  await expect(page.locator('.task-list')).toContainText('Urgent')
+  await page.getByPlaceholder('Search tasks or clients').fill('campaign')
+  const row=page.locator('.task-row').filter({hasText:'Prepare campaign performance review'})
+  await row.getByRole('button',{name:'Edit'}).click()
+  await page.getByLabel('Priority').selectOption('High')
+  await page.getByRole('button',{name:'Save changes'}).click()
+  await expect(row).toContainText('High')
+  await row.getByRole('button',{name:'Cancel'}).click()
+  await expect(row).toHaveCount(0)
+})
+
+test('workflow studio loads a playbook and persists multiple steps',async({page})=>{
+  await page.locator('.sidebar nav').getByRole('button',{name:'Automations'}).click()
+  await page.getByRole('button',{name:'Playbook library'}).click()
+  await page.getByRole('button',{name:'Use playbook'}).first().click()
+  await expect(page.getByLabel('Minimum lead score')).toHaveValue('75')
+  await expect(page.getByLabel('Action 2')).toHaveValue('create_task')
+  await page.getByRole('button',{name:'Save and activate'}).click()
+  await expect(page.locator('.automation-catalog')).toContainText('score ≥ 75')
+  await expect(page.locator('.automation-catalog')).toContainText('Create a follow-up task')
+  await page.getByLabel('Test lead').selectOption('lead-james')
+  await page.getByRole('button',{name:'Run test'}).click()
+  await expect(page.locator('.automation-side')).toContainText('James Mwangi matches')
+})
+
+test('analytics switches between executive, acquisition and team reports',async({page})=>{
+  await page.locator('.sidebar nav').getByRole('button',{name:'Analytics'}).click()
+  await expect(page.getByText('Weighted forecast')).toBeVisible()
+  await expect(page.getByRole('heading',{name:'Funnel leakage'})).toBeVisible()
+  await page.getByRole('button',{name:'Acquisition & funnel'}).click()
+  await expect(page.getByRole('heading',{name:'Source quality scorecard'})).toBeVisible()
+  await page.getByRole('button',{name:'Team performance'}).click()
+  await expect(page.locator('.owner-scorecards')).toContainText('Cyprian')
+  await page.getByLabel('Minimum score').fill('70')
+  await expect(page.locator('.report-table tbody tr')).toHaveCount(2)
+})
+
+test('landing page describes shipped capture and professional operations',async({page})=>{
+  await page.goto('/')
+  await expect(page.getByRole('heading',{name:/Professional tools/})).toBeVisible()
+  await expect(page.getByText('Website capture',{exact:true})).toBeVisible()
+  await expect(page.getByText('Widget ready')).toBeVisible()
+  await expect(page.getByText(/embeddable enquiry widget/).first()).toBeVisible()
+})

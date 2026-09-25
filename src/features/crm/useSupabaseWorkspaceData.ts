@@ -3,10 +3,10 @@ import { supabase } from '../../lib/supabase'
 import { createContact, listContacts, updateContact as saveContact } from '../../services/contacts'
 import { addLeadNote, archiveLead, assignLead, createLead, listLeads, listWorkspaceActivity, moveLead as transitionLead, scheduleFollowUp, updateLeadFields } from '../../services/leads'
 import { listOrganizationMembers } from '../../services/organizations'
-import { completeTask as markTaskComplete, listTasks } from '../../services/tasks'
+import { cancelTask as removeTask, completeTask as markTaskComplete, createTask as saveNewTask, listTasks, updateTask as saveTask } from '../../services/tasks'
 import { runTriggeredAutomations } from '../../services/automations'
 import type { ContactRow, DatabaseLeadStage, LeadActivityRow, LeadRow, TaskRow } from '../../types/database'
-import type { ContactDraft, LeadDraft, LeadStage, OwnerOption, TimelineEntry, WorkspaceContact, WorkspaceLead, WorkspaceTask } from './types'
+import type { ContactDraft, LeadDraft, LeadStage, OwnerOption, TaskDraft, TimelineEntry, WorkspaceContact, WorkspaceLead, WorkspaceTask } from './types'
 
 const stageToDatabase:Record<LeadStage,DatabaseLeadStage>={New:'NEW',Qualified:'QUALIFIED',Contacted:'CONTACTED',Meeting:'MEETING',Negotiation:'NEGOTIATION',Won:'WON',Lost:'LOST'}
 const stageFromDatabase:Record<DatabaseLeadStage,LeadStage>={NEW:'New',QUALIFIED:'Qualified',CONTACTED:'Contacted',MEETING:'Meeting',NEGOTIATION:'Negotiation',WON:'Won',LOST:'Lost'}
@@ -85,7 +85,7 @@ export function useSupabaseWorkspaceData(organizationId:string|undefined,enabled
     const related=rows.filter(lead=>lead.contact_id===contact.id&&!lead.archived_at)
     return {id:contact.id,name:contact.name,email:contact.email??'',phone:contact.phone??'',company:contact.company??'',tags:contact.tags,type:related.some(lead=>lead.stage==='WON')?'Customer':related.length?'Lead':'Prospect',lastActivity:activityLabel(contact.updated_at)}
   }),[contactRows,rows])
-  const tasks=useMemo<WorkspaceTask[]>(()=>taskRows.map(task=>({id:task.id,leadId:task.lead_id,leadName:task.lead_id?mappedLeads.find(lead=>lead.id===task.lead_id)?.name??'Lead':'General task',title:task.title,description:task.description??'',dueAt:task.due_at,status:task.status==='OPEN'?'Open':task.status==='COMPLETED'?'Completed':'Cancelled',assignee:task.assigned_to?ownerNames.get(task.assigned_to)??'Workspace member':'Unassigned'})),[mappedLeads,ownerNames,taskRows])
+  const tasks=useMemo<WorkspaceTask[]>(()=>taskRows.map(task=>({id:task.id,leadId:task.lead_id,leadName:task.lead_id?mappedLeads.find(lead=>lead.id===task.lead_id)?.name??'Lead':'General task',title:task.title,description:task.description??'',dueAt:task.due_at,status:task.status==='OPEN'?'Open':task.status==='COMPLETED'?'Completed':'Cancelled',assignee:task.assigned_to?ownerNames.get(task.assigned_to)??'Workspace member':'Unassigned',assigneeId:task.assigned_to,priority:task.priority==='LOW'?'Low':task.priority==='HIGH'?'High':task.priority==='URGENT'?'Urgent':'Normal'})),[mappedLeads,ownerNames,taskRows])
 
   const run=async<T,>(operation:()=>Promise<T>)=>{setError('');try{const result=await operation();await refresh();return result}catch(reason){const message=reason instanceof Error?reason.message:'The workspace update failed.';setError(message);throw reason}}
   const addLead=(draft:LeadDraft)=>run(async()=>{const created=await createLead({organizationId:organizationId!,name:draft.name,email:draft.email,phone:draft.phone,company:draft.company,interest:draft.interest,source:draft.source,stage:stageToDatabase[draft.stage],score:draft.score,estimatedValue:numericValue(draft.value),ownerId:draft.ownerId||null,nextAction:draft.nextAction,tags:draft.tags,qualification:{custom_fields:draft.customFields}});await runTriggeredAutomations(organizationId!,created.id,'LEAD_CREATED');return created.id})
@@ -105,6 +105,10 @@ export function useSupabaseWorkspaceData(organizationId:string|undefined,enabled
   const addContact=(draft:ContactDraft)=>run(()=>createContact(organizationId!,draft))
   const updateContact=(contactId:string,changes:Partial<WorkspaceContact>)=>run(()=>{const current=contacts.find(contact=>contact.id===contactId);if(!current)throw new Error('Contact not found.');return saveContact(contactId,organizationId!,{name:changes.name??current.name,email:changes.email??current.email,phone:changes.phone??current.phone,company:changes.company??current.company,tags:changes.tags??current.tags})})
   const completeTask=(taskId:string)=>run(()=>markTaskComplete(taskId,organizationId!))
+  const taskInput=(draft:TaskDraft)=>({title:draft.title,description:draft.description,priority:draft.priority.toUpperCase() as 'LOW'|'NORMAL'|'HIGH'|'URGENT',dueAt:draft.dueAt,leadId:draft.leadId,assignedTo:draft.assigneeId})
+  const createTask=(draft:TaskDraft)=>run(()=>saveNewTask(organizationId!,taskInput(draft)))
+  const updateTask=(taskId:string,draft:TaskDraft)=>run(()=>saveTask(taskId,organizationId!,taskInput(draft)))
+  const cancelTask=(taskId:string)=>run(()=>removeTask(taskId,organizationId!))
 
-  return {leads,archivedLeads:mappedLeads.filter(lead=>lead.archived),contacts,tasks,owners,loading,error,refresh,addLead,updateLead,moveLead,addNote,addFollowUp,archiveLeads,addContact,updateContact,completeTask,resetDemo:()=>{}}
+  return {leads,archivedLeads:mappedLeads.filter(lead=>lead.archived),contacts,tasks,owners,loading,error,refresh,addLead,updateLead,moveLead,addNote,addFollowUp,archiveLeads,addContact,updateContact,completeTask,createTask,updateTask,cancelTask,resetDemo:()=>{}}
 }

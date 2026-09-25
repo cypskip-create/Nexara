@@ -8,7 +8,7 @@ type Membership = { organization_id:string; user_id:string; role:MemberRole; cre
 type Contact = { id:string; organization_id:string; name:string; email:string|null; phone:string|null; company:string|null; tags:string[]; created_at:string; updated_at:string }
 type Lead = { id:string; organization_id:string; contact_id:string|null; owner_id:string|null; interest:string|null; source:string|null; stage:DatabaseLeadStage; score:number; estimated_value:number|null; qualification:Json; next_action:string|null; archived_at:string|null; created_at:string; updated_at:string }
 type LeadActivity = { id:string; organization_id:string; lead_id:string; actor_id:string|null; activity_type:'CREATED'|'NOTE'|'STAGE_CHANGED'|'ASSIGNED'|'FOLLOW_UP'|'AUTOMATION'|'MESSAGE'|'ARCHIVED'; body:string|null; metadata:Json; created_at:string }
-type Task = { id:string; organization_id:string; lead_id:string|null; assigned_to:string|null; created_by:string|null; title:string; description:string|null; status:'OPEN'|'COMPLETED'|'CANCELLED'; due_at:string|null; completed_at:string|null; created_at:string; updated_at:string }
+type Task = { id:string; organization_id:string; lead_id:string|null; assigned_to:string|null; created_by:string|null; title:string; description:string|null; priority:'LOW'|'NORMAL'|'HIGH'|'URGENT'; status:'OPEN'|'COMPLETED'|'CANCELLED'; due_at:string|null; completed_at:string|null; created_at:string; updated_at:string }
 type Invitation = { id:string; organization_id:string; email:string; role:MemberRole; token_hash:string; invited_by:string; expires_at:string; accepted_at:string|null; created_at:string }
 type Automation = { id:string; organization_id:string; name:string; status:'DRAFT'|'ACTIVE'|'PAUSED'|'ERROR'; trigger_type:string; created_by:string|null; created_at:string; updated_at:string }
 type AutomationStep = { id:string; automation_id:string; organization_id:string; step_type:'CONDITION'|'ACTION'; position:number; config:Json; created_at:string }
@@ -75,6 +75,7 @@ export interface Database {
       update_organization_settings: { Args:{ target_org:string; organization_name:string; organization_industry:string; organization_website:string; organization_phone:string; organization_country:string; organization_timezone:string }; Returns:Organization }
       create_automation_workflow: { Args:{ target_org:string; workflow_name:string; minimum_score:number; action_type:string; delay_hours:number }; Returns:Automation }
       create_automation_workflow_v2: { Args:{ target_org:string; workflow_name:string; workflow_trigger:string; minimum_score:number; action_type:string; delay_hours:number }; Returns:Automation }
+      create_automation_workflow_v3: { Args:{ target_org:string; workflow_name:string; workflow_trigger:string; workflow_conditions:Json; workflow_actions:Json }; Returns:Automation }
       delete_automation_workflow: { Args:{ target_org:string; target_automation:string }; Returns:undefined }
       delete_organization: { Args:{ target_org:string; confirmation:string }; Returns:undefined }
     }

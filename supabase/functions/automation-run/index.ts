@@ -46,20 +46,22 @@ Deno.serve(async request=>{
       return json({status:'SKIPPED',runId})
     }
     const completed:string[]=[]
+    let currentOwnerId=typedLead.owner_id
     for(const step of typedSteps.filter(item=>item.step_type==='ACTION')){
       const config=step.config
       if(config.type==='assign_owner'){
         const ownerId=String(config.ownerId??'')||null
+        if(!ownerId)throw new Error('Assign owner action has no team member.')
         const {error}=await admin.from('leads').update({owner_id:ownerId,updated_at:new Date().toISOString()}).eq('id',leadId).eq('organization_id',automation.organization_id)
-        if(error)throw error;completed.push('assign_owner')
+        if(error)throw error;currentOwnerId=ownerId;completed.push('assign_owner')
       }else if(config.type==='set_stage'){
         const {error}=await admin.from('leads').update({stage:String(config.stage??'QUALIFIED'),updated_at:new Date().toISOString()}).eq('id',leadId).eq('organization_id',automation.organization_id)
         if(error)throw error;completed.push('set_stage')
       }else if(config.type==='create_task'){
-        const {error}=await admin.from('tasks').insert({organization_id:automation.organization_id,lead_id:leadId,created_by:userId,assigned_to:typedLead.owner_id,title:String(config.title??'Automation follow-up'),description:'Created by an automation',due_at:new Date(Date.now()+Number(config.delayHours??24)*3600000).toISOString()})
+        const {error}=await admin.from('tasks').insert({organization_id:automation.organization_id,lead_id:leadId,created_by:userId,assigned_to:currentOwnerId,title:String(config.title??'Automation follow-up'),description:'Created by an automation',priority:String(config.priority??'NORMAL'),due_at:new Date(Date.now()+Number(config.delayHours??24)*3600000).toISOString()})
         if(error)throw error;completed.push('create_task')
-      }else if(config.type==='notify_owner'&&typedLead.owner_id){
-        const {error}=await admin.from('notifications').insert({organization_id:automation.organization_id,user_id:typedLead.owner_id,kind:'AUTOMATION',title:String(config.title??automation.name),body:String(config.body??'A lead matched your automation.')})
+      }else if(config.type==='notify_owner'&&currentOwnerId){
+        const {error}=await admin.from('notifications').insert({organization_id:automation.organization_id,user_id:currentOwnerId,kind:'AUTOMATION',title:String(config.title??automation.name),body:String(config.body??'A lead matched your automation.')})
         if(error)throw error;completed.push('notify_owner')
       }
     }
