@@ -1,0 +1,5 @@
+import type {IntegrationRow} from '../types/database'
+import {requireSupabase,throwServiceError} from './api'
+export async function listIntegrations(organizationId:string):Promise<IntegrationRow[]>{const {data,error}=await requireSupabase().from('integrations').select('*').eq('organization_id',organizationId).order('provider');if(error)throwServiceError(error,'Unable to load integrations.');return data??[]}
+export async function checkIntegration(organizationId:string,provider:IntegrationRow['provider']){const {data,error}=await requireSupabase().functions.invoke('integration-check',{body:{organizationId,provider}});if(error)throwServiceError(error,'Unable to check integration.');return data as {integration:IntegrationRow;missing:string[]}}
+export async function disableIntegration(organizationId:string,provider:IntegrationRow['provider']){const {data,error}=await requireSupabase().from('integrations').update({status:'DISABLED',connected_at:null,updated_at:new Date().toISOString()}).eq('organization_id',organizationId).eq('provider',provider).select().single();if(error)throwServiceError(error,'Unable to disable integration.');return data}

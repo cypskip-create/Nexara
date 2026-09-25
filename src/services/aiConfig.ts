@@ -1,0 +1,5 @@
+import type {AiConfigRow,Json} from '../types/database'
+import {requireSupabase,throwServiceError} from './api'
+export type AiConfigInput={assistant_name:string;role_description:string;welcome_message:string|null;tone:AiConfigRow['tone'];custom_instructions:string|null;qualification_fields:string[];escalation_rules:Json;business_hours:Json;enabled:boolean}
+export async function getAiConfig(organizationId:string):Promise<AiConfigRow|null>{const {data,error}=await requireSupabase().from('ai_configs').select('*').eq('organization_id',organizationId).maybeSingle();if(error)throwServiceError(error,'Unable to load AI configuration.');return data}
+export async function saveAiConfig(organizationId:string,input:AiConfigInput){const {data,error}=await requireSupabase().from('ai_configs').upsert({organization_id:organizationId,...input,updated_at:new Date().toISOString()},{onConflict:'organization_id'}).select().single();if(error)throwServiceError(error,'Unable to save AI configuration.');return data}

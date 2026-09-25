@@ -32,9 +32,9 @@ Deno.serve(async request=>{
     const externalId=result.messages?.[0]?.id
     if(!externalId)throw new Error('WhatsApp accepted the request without a message ID.')
     const sentAt=new Date().toISOString()
-    const {data:message,error:messageError}=await client.from('messages').insert({organization_id:conversation.organization_id,conversation_id:conversation.id,sender_type:'HUMAN',body,external_id:externalId,created_at:sentAt}).select().single()
-    if(messageError)throw new Error('Message was sent but could not be added to conversation history.')
     const admin=adminClient()
+    const {data:message,error:messageError}=await admin.from('messages').insert({organization_id:conversation.organization_id,conversation_id:conversation.id,sender_type:'HUMAN',sender_id:user.id,body,external_id:externalId,created_at:sentAt}).select().single()
+    if(messageError)throw new Error('Message was sent but could not be added to conversation history.')
     await Promise.all([
       client.from('conversations').update({last_message_at:sentAt,updated_at:sentAt,assigned_to:user.id,status:'OPEN'}).eq('id',conversation.id).eq('organization_id',conversation.organization_id),
       admin.from('audit_events').insert({organization_id:conversation.organization_id,actor_id:user.id,event_type:'whatsapp_message_sent',entity_type:'conversation',entity_id:conversation.id,metadata:{message_id:message.id,external_id:externalId}}),

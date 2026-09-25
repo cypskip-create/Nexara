@@ -15,6 +15,12 @@ type AutomationStep = { id:string; automation_id:string; organization_id:string;
 type AutomationRun = { id:string; organization_id:string; automation_id:string; lead_id:string|null; status:'RUNNING'|'SUCCEEDED'|'FAILED'|'SKIPPED'; trigger_event:string; input:Json; output:Json; error_code:string|null; started_at:string; finished_at:string|null }
 type Notification = { id:string; organization_id:string; user_id:string; kind:string; title:string; body:string|null; read_at:string|null; created_at:string }
 type Subscription = { id:string; organization_id:string; plan:'STARTER'|'GROWTH'|'PRO'; status:'TRIALING'|'ACTIVE'|'PAST_DUE'|'CANCELLED'|'INCOMPLETE'; billing_interval:'MONTHLY'|'YEARLY'; provider:string|null; provider_customer_id:string|null; provider_subscription_id:string|null; trial_ends_at:string|null; current_period_ends_at:string|null; created_at:string; updated_at:string }
+type Conversation = { id:string; organization_id:string; contact_id:string|null; channel:'WEBSITE'|'WHATSAPP'|'EMAIL'|'API'; status:'OPEN'|'CLOSED'|'SNOOZED'; assigned_to:string|null; last_message_at:string|null; created_at:string; updated_at:string }
+type Message = { id:string; organization_id:string; conversation_id:string; sender_type:'CUSTOMER'|'AI'|'HUMAN'|'SYSTEM'; sender_id:string|null; body:string; external_id:string|null; created_at:string }
+type ConversationRead = { organization_id:string; conversation_id:string; user_id:string; last_read_at:string }
+type KnowledgeItem = { id:string; organization_id:string; title:string; item_type:'FAQ'|'PRODUCT'|'SERVICE'|'POLICY'|'GENERAL'|'DOCUMENT'; content:string; status:'ACTIVE'|'DRAFT'|'ARCHIVED'; metadata:Json; created_at:string; updated_at:string }
+type AiConfig = { id:string; organization_id:string; assistant_name:string; role_description:string; welcome_message:string|null; tone:'PROFESSIONAL'|'FRIENDLY'|'CONCISE'|'CUSTOM'; custom_instructions:string|null; qualification_fields:string[]; escalation_rules:Json; business_hours:Json; enabled:boolean; created_at:string; updated_at:string }
+type Integration = { id:string; organization_id:string; provider:'WHATSAPP'|'WEBSITE'|'EMAIL'|'WEBHOOK'; status:'SETUP_REQUIRED'|'CONNECTED'|'ERROR'|'DISABLED'; public_config:Json; secret_reference:string|null; last_error_code:string|null; connected_at:string|null; created_at:string; updated_at:string }
 
 type Table<Row, Insert = Partial<Row>, Update = Partial<Insert>> = { Row:Row; Insert:Insert; Update:Update; Relationships:[] }
 
@@ -34,6 +40,12 @@ export interface Database {
       automation_runs: Table<AutomationRun, Pick<AutomationRun,'organization_id'|'automation_id'|'status'|'trigger_event'> & Partial<AutomationRun>>
       notifications: Table<Notification, Pick<Notification,'organization_id'|'user_id'|'kind'|'title'> & Partial<Notification>>
       subscriptions: Table<Subscription, Pick<Subscription,'organization_id'> & Partial<Subscription>>
+      conversations: Table<Conversation, Pick<Conversation,'organization_id'|'channel'> & Partial<Conversation>>
+      messages: Table<Message, Pick<Message,'organization_id'|'conversation_id'|'sender_type'|'body'> & Partial<Message>>
+      conversation_reads: Table<ConversationRead, ConversationRead>
+      knowledge_items: Table<KnowledgeItem, Pick<KnowledgeItem,'organization_id'|'title'|'item_type'|'content'> & Partial<KnowledgeItem>>
+      ai_configs: Table<AiConfig, Pick<AiConfig,'organization_id'> & Partial<AiConfig>>
+      integrations: Table<Integration, Pick<Integration,'organization_id'|'provider'> & Partial<Integration>>
     }
     Views: Record<string, never>
     Functions: {
@@ -47,6 +59,9 @@ export interface Database {
       accept_invitation: { Args:{ invite_token:string }; Returns:string }
       upsert_contact: { Args:{ target_org:string; contact_name:string; contact_email?:string|null; contact_phone?:string|null; contact_company?:string|null; contact_tags?:string[] }; Returns:Contact }
       update_contact: { Args:{ target_contact:string; target_org:string; contact_name:string; contact_email?:string|null; contact_phone?:string|null; contact_company?:string|null; contact_tags?:string[] }; Returns:Contact }
+      create_conversation: { Args:{ target_org:string; target_contact:string|null; conversation_channel?:string }; Returns:Conversation }
+      send_conversation_message: { Args:{ target_org:string; target_conversation:string; message_body:string }; Returns:Message }
+      mark_conversation_read: { Args:{ target_org:string; target_conversation:string }; Returns:string }
     }
     Enums: { member_role:MemberRole; lead_stage:DatabaseLeadStage }
     CompositeTypes: Record<string, never>
@@ -64,3 +79,9 @@ export type AutomationStepRow = AutomationStep
 export type AutomationRunRow = AutomationRun
 export type NotificationRow = Notification
 export type SubscriptionRow = Subscription
+export type ConversationRow = Conversation
+export type MessageRow = Message
+export type ConversationReadRow = ConversationRead
+export type KnowledgeItemRow = KnowledgeItem
+export type AiConfigRow = AiConfig
+export type IntegrationRow = Integration

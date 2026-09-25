@@ -117,3 +117,31 @@ test('billing, public enquiries and contact deduplication stay server controlled
   expect(webhook).toContain('stripe-signature')
   expect(env).not.toMatch(/VITE_(STRIPE|INQUIRY)/)
 })
+
+test('inbox, knowledge, AI settings and integration state are persistent and tenant safe',async()=>{
+  const [migration,inbox,knowledge,aiConfig,integrations,check,sharedSupabase]=await Promise.all([
+    readFile(resolve(root,'supabase/migrations/0010_live_workspace_modules.sql'),'utf8'),
+    readFile(resolve(root,'src/services/inbox.ts'),'utf8'),
+    readFile(resolve(root,'src/services/knowledge.ts'),'utf8'),
+    readFile(resolve(root,'src/services/aiConfig.ts'),'utf8'),
+    readFile(resolve(root,'src/services/integrations.ts'),'utf8'),
+    readFile(resolve(root,'supabase/functions/integration-check/index.ts'),'utf8'),
+    readFile(resolve(root,'supabase/functions/_shared/supabase.ts'),'utf8'),
+  ])
+  expect(migration).toContain('alter table public.conversation_reads enable row level security;')
+  expect(migration).toContain('public.can_access_conversation(conversation_id,organization_id)')
+  for(const command of ['create_conversation','send_conversation_message','mark_conversation_read']){
+    expect(migration).toContain(`function public.${command}`)
+    expect(inbox).toContain(`rpc('${command}'`)
+  }
+  expect(migration).toContain('revoke insert,update,delete on public.messages from authenticated')
+  for(const table of ['conversations','messages','conversation_reads','knowledge_items','ai_configs','integrations'])expect(migration).toContain(`'${table}'`)
+  expect(knowledge).toContain("from('knowledge_items')")
+  expect(aiConfig).toContain("from('ai_configs')")
+  expect(integrations).toContain("from('integrations')")
+  expect(check).toContain('requireUser(request)')
+  expect(check).toContain("['OWNER','ADMIN'].includes")
+  expect(check).toContain('adminClient()')
+  expect(sharedSupabase).toContain("required('SUPABASE_SERVICE_ROLE_KEY')")
+  expect(check).not.toContain('VITE_WHATSAPP')
+})

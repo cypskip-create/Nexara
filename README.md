@@ -1,13 +1,13 @@
 # Nexara LeadFlow
 
-Nexara LeadFlow is a multi-tenant lead capture, qualification, CRM, automation and analytics platform for SMEs. The current product includes a polished responsive workspace, persistent browser-based demo CRM, lead and contact management, an interactive pipeline, lead activity timelines, global search, notifications, theme switching, analytics, and a motion-rich public landing experience.
+Nexara LeadFlow is a multi-tenant lead capture, qualification, CRM, automation and analytics platform for SMEs. The current product includes a polished responsive workspace, persistent browser-based demo CRM, authenticated live CRM, shared Inbox, Knowledge Base, AI Assistant settings, integration health, lead and contact management, an interactive pipeline, lead activity timelines, global search, notifications, theme switching, analytics, and a motion-rich public landing experience.
 
 ## Stack
 
 - React + TypeScript + Vite
 - CSS design tokens with responsive light/dark UI
 - Supabase target architecture (Auth, PostgreSQL, RLS, Storage)
-- Server-side AI and WhatsApp integrations planned behind service boundaries
+- Server-side AI, WhatsApp, email, billing and public-capture service boundaries
 
 ## Run locally
 
@@ -27,6 +27,7 @@ The repository includes reproducible migrations for authentication profiles, org
 
 See [backend foundation](docs/backend-foundation.md) for migration, authorization and production-verification guidance.
 See [server functions](docs/server-functions.md) for the AI qualification and WhatsApp webhook/delivery trust boundaries and required secrets.
+See [live workspace modules](docs/live-workspace-modules.md) for Inbox, Knowledge Base, AI Assistant and integration readiness behavior.
 
 ## Public product experience
 
@@ -45,11 +46,11 @@ Copy `.env.example` to `.env.local`. Demo mode only needs `VITE_APP_URL`; authen
 
 ## Product implementation plan
 
-1. Deploy the committed Edge Functions and configure provider secrets in Supabase.
+1. Configure the deferred email sender and production application origin in Supabase.
 2. Complete provider-sandbox tests for OpenAI qualification and WhatsApp inbound/outbound delivery.
-3. Add team invitations and onboarding persistence to the authenticated application journey.
-4. Implement the automation execution worker and durable retry queue.
-5. Connect the live Inbox UI to persisted conversations and messages.
+3. Add OAuth/channel onboarding for integrations that require customer-owned credentials.
+4. Add durable scheduling and retry execution around automation runs.
+5. Implement signed outbound webhook destinations and delivery history.
 
 ## Demo data
 
