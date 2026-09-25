@@ -52,6 +52,12 @@ Copy `.env.example` to `.env.local`. Demo mode only needs `VITE_APP_URL`; authen
 4. Schedule `automation-retry` with the chosen production scheduler after configuring its shared secret.
 5. Complete end-to-end provider certification with production WhatsApp, email, AI and Stripe accounts.
 
+## Product expansion
+
+The workspace now includes an embeddable website enquiry widget with tenant keys and origin allowlists, event-triggered automations with duplicate/delete controls, date-aware analytics, explainable lead scoring, persistent first-run setup progress, quick actions, notification preferences and operational database alerts. Live settings include profile, password, data export and owner-confirmed workspace deletion controls. Lead tables and conversation history use bounded page sizes so larger workspaces do not render an unbounded record set.
+
+Apply `0013_product_expansion.sql` and deploy `widget-inquiry` before enabling a live website widget. The generated snippet points to the deployed Supabase function and will reject requests from origins not saved in the widget configuration.
+
 ## Demo data
 
 The current Acacia Properties workspace is clearly labelled demo data. Lead, contact, pipeline, note and follow-up changes persist in local browser storage so complete workflows can be tested safely. It does not represent a live customer or production integration; shared data still requires the Supabase adapter and credentials.

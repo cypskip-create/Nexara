@@ -96,8 +96,9 @@ export function useSupabaseWorkspaceData(organizationId:string|undefined,enabled
     if((changes.ownerId!==undefined?changes.ownerId:null)!==current.ownerId&&(changes.ownerId!==undefined||changes.owner!==undefined))await assignLead(leadId,organizationId!,changes.ownerId||null)
     if(changes.interest!==undefined||changes.source!==undefined||changes.score!==undefined||changes.value!==undefined||changes.nextAction!==undefined||changes.customFields!==undefined){const raw=rows.find(lead=>lead.id===leadId)?.qualification;const base=raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{};await updateLeadFields(leadId,organizationId!,{interest:changes.interest,source:changes.source,score:changes.score,estimatedValue:changes.value===undefined?undefined:numericValue(changes.value),nextAction:changes.nextAction,qualification:changes.customFields===undefined?undefined:{...base,custom_fields:changes.customFields}})}
     if(current.contactId&&(changes.name!==undefined||changes.email!==undefined||changes.phone!==undefined||changes.company!==undefined||changes.tags!==undefined))await saveContact(current.contactId,organizationId!,{name:changes.name??current.name,email:changes.email??current.email,phone:changes.phone??current.phone,company:changes.company??current.company,tags:changes.tags??current.tags})
+    await runTriggeredAutomations(organizationId!,leadId,changes.stage!==undefined&&changes.stage!==current.stage?'STAGE_CHANGED':'LEAD_UPDATED')
   })
-  const moveLead=(leadId:string,stage:LeadStage)=>run(()=>transitionLead(leadId,organizationId!,stageToDatabase[stage]))
+  const moveLead=(leadId:string,stage:LeadStage)=>run(async()=>{const result=await transitionLead(leadId,organizationId!,stageToDatabase[stage]);await runTriggeredAutomations(organizationId!,leadId,'STAGE_CHANGED');return result})
   const addNote=(leadId:string,text:string)=>run(()=>addLeadNote(leadId,organizationId!,text))
   const addFollowUp=(leadId:string,dueAt:string)=>run(()=>scheduleFollowUp(leadId,organizationId!,'Lead follow-up',dueAt))
   const archiveLeads=(leadIds:string[])=>run(()=>Promise.all(leadIds.map(leadId=>archiveLead(leadId,organizationId!))))

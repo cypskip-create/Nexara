@@ -2,7 +2,7 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type MemberRole = 'OWNER' | 'ADMIN' | 'MANAGER' | 'AGENT'
 export type DatabaseLeadStage = 'NEW' | 'QUALIFIED' | 'CONTACTED' | 'MEETING' | 'NEGOTIATION' | 'WON' | 'LOST'
 
-type Organization = { id:string; name:string; industry:string|null; website:string|null; phone:string|null; country:string|null; timezone:string|null; onboarding_step:number; onboarding_completed_at:string|null; created_at:string; updated_at:string }
+type Organization = { id:string; name:string; industry:string|null; website:string|null; phone:string|null; country:string|null; timezone:string|null; logo_url:string|null; onboarding_step:number; onboarding_completed_at:string|null; created_at:string; updated_at:string }
 type Profile = { id:string; full_name:string|null; avatar_url:string|null; created_at:string; updated_at:string }
 type Membership = { organization_id:string; user_id:string; role:MemberRole; created_at:string }
 type Contact = { id:string; organization_id:string; name:string; email:string|null; phone:string|null; company:string|null; tags:string[]; created_at:string; updated_at:string }
@@ -23,6 +23,9 @@ type AiConfig = { id:string; organization_id:string; assistant_name:string; role
 type Integration = { id:string; organization_id:string; provider:'WHATSAPP'|'WEBSITE'|'EMAIL'|'WEBHOOK'; status:'SETUP_REQUIRED'|'CONNECTED'|'ERROR'|'DISABLED'; public_config:Json; secret_reference:string|null; last_error_code:string|null; connected_at:string|null; created_at:string; updated_at:string }
 type WebhookEndpoint = { id:string; organization_id:string; url:string; events:string[]; enabled:boolean; created_by:string|null; created_at:string; updated_at:string }
 type WebhookDelivery = { id:string; organization_id:string; endpoint_id:string; event_type:string; event_id:string; status:'PENDING'|'SUCCEEDED'|'FAILED'; response_status:number|null; attempt:number; error_code:string|null; created_at:string; delivered_at:string|null }
+type WidgetConfig = { organization_id:string; public_key:string; enabled:boolean; brand_name:string; welcome_message:string; primary_color:string; allowed_origins:string[]; updated_at:string }
+type NotificationPreference = { organization_id:string; user_id:string; in_app:boolean; email_qualified_lead:boolean; email_assignment:boolean; email_follow_up:boolean; email_automation_failure:boolean; email_integration_failure:boolean; updated_at:string }
+type PlanLimit = { plan:'STARTER'|'GROWTH'|'PRO'; members:number; monthly_leads:number; active_automations:number; knowledge_items:number }
 
 type Table<Row, Insert = Partial<Row>, Update = Partial<Insert>> = { Row:Row; Insert:Insert; Update:Update; Relationships:[] }
 
@@ -50,6 +53,9 @@ export interface Database {
       integrations: Table<Integration, Pick<Integration,'organization_id'|'provider'> & Partial<Integration>>
       webhook_endpoints: Table<WebhookEndpoint, Pick<WebhookEndpoint,'organization_id'|'url'> & Partial<WebhookEndpoint>>
       webhook_deliveries: Table<WebhookDelivery, Pick<WebhookDelivery,'organization_id'|'endpoint_id'|'event_type'|'status'> & Partial<WebhookDelivery>>
+      widget_configs: Table<WidgetConfig, Pick<WidgetConfig,'organization_id'> & Partial<WidgetConfig>>
+      notification_preferences: Table<NotificationPreference, Pick<NotificationPreference,'organization_id'|'user_id'> & Partial<NotificationPreference>>
+      plan_limits: Table<PlanLimit,PlanLimit>
     }
     Views: Record<string, never>
     Functions: {
@@ -68,6 +74,9 @@ export interface Database {
       mark_conversation_read: { Args:{ target_org:string; target_conversation:string }; Returns:string }
       update_organization_settings: { Args:{ target_org:string; organization_name:string; organization_industry:string; organization_website:string; organization_phone:string; organization_country:string; organization_timezone:string }; Returns:Organization }
       create_automation_workflow: { Args:{ target_org:string; workflow_name:string; minimum_score:number; action_type:string; delay_hours:number }; Returns:Automation }
+      create_automation_workflow_v2: { Args:{ target_org:string; workflow_name:string; workflow_trigger:string; minimum_score:number; action_type:string; delay_hours:number }; Returns:Automation }
+      delete_automation_workflow: { Args:{ target_org:string; target_automation:string }; Returns:undefined }
+      delete_organization: { Args:{ target_org:string; confirmation:string }; Returns:undefined }
     }
     Enums: { member_role:MemberRole; lead_stage:DatabaseLeadStage }
     CompositeTypes: Record<string, never>
@@ -93,3 +102,6 @@ export type AiConfigRow = AiConfig
 export type IntegrationRow = Integration
 export type WebhookEndpointRow = WebhookEndpoint
 export type WebhookDeliveryRow = WebhookDelivery
+export type WidgetConfigRow = WidgetConfig
+export type NotificationPreferenceRow = NotificationPreference
+export type PlanLimitRow = PlanLimit

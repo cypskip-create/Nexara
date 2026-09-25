@@ -400,6 +400,9 @@ verify_jwt = true
 [functions.automation-run]
 verify_jwt = false
 
+[functions.widget-inquiry]
+verify_jwt = false
+
 # Both endpoints enforce either a signed-in workspace session or an internal cron secret.
 [functions.automation-retry]
 verify_jwt = false

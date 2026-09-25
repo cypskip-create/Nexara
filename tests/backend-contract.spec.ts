@@ -15,6 +15,18 @@ test('workflow creation is atomic and previews are side-effect free',async()=>{
   expect(runner.indexOf("if(dryRun||triggerEvent==='MANUAL_TEST')return json(")).toBeLessThan(runner.indexOf("admin.from('automation_runs').insert"))
 })
 
+test('product expansion is tenant safe and widget ingestion validates origins',async()=>{
+  const [sql,widget]=await Promise.all([readFile(resolve(root,'supabase/migrations/0013_product_expansion.sql'),'utf8'),readFile(resolve(root,'supabase/functions/widget-inquiry/index.ts'),'utf8')])
+  for(const table of ['widget_configs','notification_preferences','plan_limits'])expect(sql).toContain(`alter table public.${table} enable row level security;`)
+  expect(sql).toContain('delete_organization')
+  expect(sql).toContain('create_automation_workflow_v2')
+  expect(sql).toContain('leads_operational_notifications')
+  expect(widget).toContain("config.allowed_origins.includes(origin)")
+  expect(widget).toContain("eq('public_key',body.widgetKey)")
+  expect(widget).toContain("requireSecret('SUPABASE_SERVICE_ROLE_KEY')")
+  expect(widget).toContain("if((count??0)>=5)")
+})
+
 test('all new tenant-owned tables enable row-level security',async()=>{
   const [sql,profileSecurity]=await Promise.all([readFile(migrationPath,'utf8'),readFile(resolve(root,'supabase/migrations/0005_profile_security.sql'),'utf8')])
   const tables=['invitations','lead_activities','tasks','ai_configs','automation_runs','integrations','subscriptions','analytics_events']
