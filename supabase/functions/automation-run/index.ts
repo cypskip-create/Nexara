@@ -3,6 +3,7 @@ import {adminClient,requireUser} from '../_shared/supabase.ts'
 
 type Step={step_type:'CONDITION'|'ACTION';position:number;config:Record<string,unknown>}
 type Lead={id:string;organization_id:string;owner_id:string|null;stage:string;source:string|null;score:number;contact_id:string|null}
+const stageOrder=['NEW','QUALIFIED','CONTACTED','MEETING','NEGOTIATION','WON']
 
 function conditionPasses(config:Record<string,unknown>,lead:Lead){
   if(config.type==='score_gte')return lead.score>=Number(config.value??0)
@@ -35,7 +36,7 @@ Deno.serve(async request=>{
     const typedLead=lead as Lead
     const typedSteps=(steps??[]) as Step[]
     if(!typedSteps.some(step=>step.step_type==='ACTION'))throw new Error('Automation has no action.')
-    if(typedSteps.some(step=>step.step_type==='ACTION'&&!['assign_owner','set_stage','create_task','notify_owner'].includes(String(step.config.type))))throw new Error('Automation has an unsupported action.')
+    if(typedSteps.some(step=>step.step_type==='ACTION'&&!['assign_owner','set_stage','advance_stage','create_task','notify_owner'].includes(String(step.config.type))))throw new Error('Automation has an unsupported action.')
     const matches=!typedSteps.filter(step=>step.step_type==='CONDITION').some(step=>!conditionPasses(step.config,typedLead))
     if(dryRun||triggerEvent==='MANUAL_TEST')return json({status:matches?'MATCHED':'SKIPPED',dryRun:true,actions:matches?typedSteps.filter(step=>step.step_type==='ACTION').map(step=>step.config.type):[]})
     const {data:run,error:runError}=await admin.from('automation_runs').insert({organization_id:automation.organization_id,automation_id:automationId,lead_id:leadId,status:'RUNNING',trigger_event:triggerEvent,input:{leadId},attempt,max_attempts:3,retry_of:retryOf??null}).select().single()
@@ -54,9 +55,23 @@ Deno.serve(async request=>{
         if(!ownerId)throw new Error('Assign owner action has no team member.')
         const {error}=await admin.from('leads').update({owner_id:ownerId,updated_at:new Date().toISOString()}).eq('id',leadId).eq('organization_id',automation.organization_id)
         if(error)throw error;currentOwnerId=ownerId;completed.push('assign_owner')
-      }else if(config.type==='set_stage'){
-        const {error}=await admin.from('leads').update({stage:String(config.stage??'QUALIFIED'),updated_at:new Date().toISOString()}).eq('id',leadId).eq('organization_id',automation.organization_id)
-        if(error)throw error;completed.push('set_stage')
+      }else if(config.type==='set_stage'||config.type==='advance_stage'){
+        const currentIndex=stageOrder.indexOf(typedLead.stage)
+        const nextStage=config.type==='advance_stage'?(currentIndex>=0&&currentIndex<stageOrder.length-1?stageOrder[currentIndex+1]:typedLead.stage):String(config.stage??'QUALIFIED')
+        if(nextStage!==typedLead.stage){
+          const previousStage=typedLead.stage
+          const {error}=await admin.from('leads').update({stage:nextStage,updated_at:new Date().toISOString()}).eq('id',leadId).eq('organization_id',automation.organization_id)
+          if(error)throw error
+          const auditWrites=await Promise.all([
+            admin.from('lead_activities').insert({organization_id:automation.organization_id,lead_id:leadId,actor_id:userId,activity_type:'STAGE_CHANGED',body:`Automation moved the lead from ${previousStage} to ${nextStage}.`,metadata:{automation_id:automationId,run_id:runId,from:previousStage,to:nextStage}}),
+            admin.from('analytics_events').insert({organization_id:automation.organization_id,event_name:nextStage==='WON'?'lead_won':'lead_stage_changed',actor_id:userId,entity_type:'lead',entity_id:leadId,properties:{automation_id:automationId,from:previousStage,to:nextStage}}),
+            admin.from('audit_events').insert({organization_id:automation.organization_id,actor_id:userId,event_type:'automation_stage_changed',entity_type:'lead',entity_id:leadId,metadata:{automation_id:automationId,from:previousStage,to:nextStage}}),
+          ])
+          const auditError=auditWrites.find(result=>result.error)?.error
+          if(auditError)throw auditError
+          typedLead.stage=nextStage
+        }
+        completed.push(String(config.type))
       }else if(config.type==='create_task'){
         const {error}=await admin.from('tasks').insert({organization_id:automation.organization_id,lead_id:leadId,created_by:userId,assigned_to:currentOwnerId,title:String(config.title??'Automation follow-up'),description:'Created by an automation',priority:String(config.priority??'NORMAL'),due_at:new Date(Date.now()+Number(config.delayHours??24)*3600000).toISOString()})
         if(error)throw error;completed.push('create_task')

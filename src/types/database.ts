@@ -3,7 +3,7 @@ export type MemberRole = 'OWNER' | 'ADMIN' | 'MANAGER' | 'AGENT'
 export type DatabaseLeadStage = 'NEW' | 'QUALIFIED' | 'CONTACTED' | 'MEETING' | 'NEGOTIATION' | 'WON' | 'LOST'
 
 type Organization = { id:string; name:string; industry:string|null; website:string|null; phone:string|null; country:string|null; timezone:string|null; logo_url:string|null; onboarding_step:number; onboarding_completed_at:string|null; created_at:string; updated_at:string }
-type Profile = { id:string; full_name:string|null; avatar_url:string|null; created_at:string; updated_at:string }
+type Profile = { id:string; full_name:string|null; username:string|null; avatar_url:string|null; created_at:string; updated_at:string }
 type Membership = { organization_id:string; user_id:string; role:MemberRole; created_at:string }
 type Contact = { id:string; organization_id:string; name:string; email:string|null; phone:string|null; company:string|null; tags:string[]; created_at:string; updated_at:string }
 type Lead = { id:string; organization_id:string; contact_id:string|null; owner_id:string|null; interest:string|null; source:string|null; stage:DatabaseLeadStage; score:number; estimated_value:number|null; qualification:Json; next_action:string|null; archived_at:string|null; created_at:string; updated_at:string }
@@ -82,6 +82,7 @@ export interface Database {
       delete_organization: { Args:{ target_org:string; confirmation:string }; Returns:undefined }
       create_lead_source: { Args:{ target_org:string; source_name:string; source_platform:string }; Returns:Json }
       rotate_lead_source_key: { Args:{ target_org:string; target_source:string }; Returns:string }
+      update_current_profile: { Args:{ profile_full_name:string; profile_username:string }; Returns:Profile }
     }
     Enums: { member_role:MemberRole; lead_stage:DatabaseLeadStage }
     CompositeTypes: Record<string, never>
@@ -89,6 +90,7 @@ export interface Database {
 }
 
 export type OrganizationRow = Organization
+export type ProfileRow = Profile
 export type ContactRow = Contact
 export type LeadRow = Lead
 export type LeadActivityRow = LeadActivity

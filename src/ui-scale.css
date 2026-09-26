@@ -1,0 +1,71 @@
+/* Readability and professional workspace finish. Loaded last. */
+.app { font-size: 115%; }
+.app .nav-item { font-size: 16px; }
+.app .nav-label { font-size: 11px; }
+.app .workspace strong,
+.app .user strong { font-size: 13px; }
+.app .workspace span,
+.app .user span { font-size: 12px; }
+.app .breadcrumbs,
+.app .search,
+.app .btn { font-size: 14px; }
+.app .page-heading h1,
+.app .empty-page h1 { font-size: 34px; }
+.app .subheading { font-size: 15px; }
+.app .eyebrow { font-size: 11px; }
+.app .card h2 { font-size: 16px; }
+.app .card-head p,
+.app .metric-top,
+.app .table-card table,
+.app .attention strong,
+.app .text-btn { font-size: 13px; }
+.app .table-card th { font-size: 11px; }
+.app .attention small,
+.app small { font-size: 11px; }
+.app :is(input,textarea,select,label) { font-size: 14px; }
+
+/* Selected pages use color and weight without the inset glow shown in the old sidebar. */
+.app .nav-item.active,
+.app.dark .nav-item.active { box-shadow: none !important; border-inline-start: 0 !important; }
+.app .nav-item.active { background: #eeedff; }
+.app.dark .nav-item.active { background: #272d42; }
+
+.performance-card { min-height: 360px; }
+.performance-chart { padding: 16px 22px 0; }
+.performance-chart-summary { display:flex; gap:24px; color:var(--muted); font-size:12px; }
+.performance-chart-summary span { display:flex; align-items:center; gap:7px; }
+.performance-chart-summary strong { color:var(--ink); margin-left:3px; }
+.performance-chart-summary i { width:8px; height:8px; border-radius:50%; }
+.legend-total { background:#625be7; }
+.legend-qualified { background:#2db38a; }
+.performance-plot { position:relative; height:228px; display:flex; align-items:stretch; gap:clamp(5px,1.2vw,14px); padding:20px 4px 30px; }
+.performance-grid { position:absolute; inset:20px 4px 30px; display:flex; flex-direction:column; justify-content:space-between; pointer-events:none; }
+.performance-grid i { border-top:1px dashed var(--line); }
+.performance-column { position:relative; z-index:1; flex:1; min-width:0; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; }
+.performance-bars { width:100%; height:100%; display:flex; align-items:flex-end; justify-content:center; gap:3px; }
+.performance-bars i,.performance-bars b { width:min(14px,38%); min-height:0; border-radius:5px 5px 1px 1px; transition:height .4s ease; }
+.performance-bars i { background:linear-gradient(180deg,#7770ef,#5148dc); }
+.performance-bars b { background:linear-gradient(180deg,#55cba8,#239474); }
+.performance-column small { position:absolute; bottom:-24px; color:var(--muted); white-space:nowrap; font-size:10px; }
+.performance-link { margin:0 22px 20px; }
+
+.automation-live-note { display:flex; align-items:center; gap:13px; margin:-8px 0 18px; padding:14px 18px; border:1px solid #bde8d9; border-radius:12px; background:#effaf6; color:#176c52; }
+.automation-live-note>span { width:30px; height:30px; display:grid; place-items:center; border-radius:50%; background:#d7f3e9; font-size:18px; }
+.automation-live-note strong { font-size:14px; }
+.automation-live-note p { margin:3px 0 0; color:#4d7466; font-size:12px; }
+.automatic-action { color:var(--muted); line-height:1.4; }
+.app.dark .automation-live-note { background:#18352d; border-color:#2b5c4e; color:#8ce0c2; }
+.app.dark .automation-live-note p { color:#a6c9bd; }
+
+/* Approximately 15% larger public-site body and controls while preserving display headings. */
+.lf-site :is(p,li,button,a,label,input,select,textarea),
+.public-site :is(p,li,button,a,label,input,select,textarea) { font-size: calc(1em * 1.15); }
+.lf-site :is(.lf-kicker,.lf-fine,small),
+.public-site :is(.lf-kicker,small) { font-size: 11.5px; }
+
+@media(max-width:720px){
+  .app .page-heading h1,.app .empty-page h1{font-size:29px}
+  .performance-card{min-height:330px}
+  .performance-plot{height:190px}
+  .performance-chart-summary{gap:12px;flex-wrap:wrap}
+}
