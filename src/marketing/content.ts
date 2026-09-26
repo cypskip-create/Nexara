@@ -1,14 +1,8 @@
+import {industryProfiles} from '../config/industries'
+
 export const heroSteps = ['Enquiry received', 'AI asks the right questions', 'Details captured', 'Lead created', 'Qualified', 'Added to pipeline', 'Assigned to Sarah']
-export const qualification = [['Interest', '3-bedroom apartment'], ['Budget', 'KSh 18M–22M'], ['Location', 'Kilimani'], ['Timeline', '3 months'], ['Contact', 'James Mwangi · demo contact']]
-export const industries = {
-  'Real Estate': ['Property preference', 'Budget', 'Viewing', 'Agent'],
-  Automotive: ['Vehicle', 'Budget', 'Financing', 'Salesperson'],
-  Logistics: ['Origin & destination', 'Cargo', 'Timing', 'Quote'],
-  Education: ['Course', 'Entry requirements', 'Intake', 'Admissions'],
-  Travel: ['Destination', 'Dates', 'Budget', 'Itinerary'],
-  'Professional Services': ['Service', 'Scope', 'Deadline', 'Consultation'],
-  'Other SMEs': ['Customer need', 'Requirements', 'Timeline', 'Your team'],
-}
+export const qualification = [['Need', 'CRM for a 25-person sales team'], ['Team size', '25 users'], ['Current stack', 'Spreadsheets + email'], ['Timeline', 'This quarter'], ['Contact', 'James Mwangi · demo contact']]
+export const industries=Object.fromEntries(Object.entries(industryProfiles).map(([name,profile])=>[name,profile.qualification])) as Record<string,string[]>
 export const journey = [
   ['Customer', 'Someone has a need. Meet them on the channels they already use.'],
   ['Conversation', 'Capture the enquiry and keep the context together.'],
@@ -21,7 +15,7 @@ export const journey = [
   ['Analytics', 'Review sources, qualification and conversion to improve the process.'],
 ]
 export const faqs = [
-  ['What is LeadFlow?', 'LeadFlow brings lead capture, AI qualification, CRM, follow-up and analytics into one workspace. The public walkthrough uses a fictional business, Acacia Properties, to show the intended journey.'],
+  ['What is LeadFlow?', 'LeadFlow brings omnichannel lead capture, configurable AI qualification, CRM, follow-up and analytics into one workspace. The public walkthrough uses fictional records from several industries to show the shared journey.'],
   ['Is LeadFlow just a chatbot?', 'No. Conversations are the starting point. Lead records, ownership, pipeline stages, follow-up and reporting help a team work the opportunity after the chat.'],
   ['How does AI qualification work?', 'The intended assistant asks approved questions and structures the answers into a lead record. The demonstrations on this page are scripted; live provider-backed AI is not enabled in this preview.'],
   ['Can I choose what questions LeadFlow asks?', 'Lead records support persistent custom qualification fields alongside structured AI output, so teams can retain the details their sales process needs.'],
@@ -33,13 +27,13 @@ export const faqs = [
   ['Can I automate follow-ups?', 'Yes. The workflow studio supports event triggers, multiple conditions and sequenced actions such as team alerts, task creation, assignment and stage updates. Dry runs validate a workflow without changing customer records, and every execution is recorded.'],
   ['What happens if the AI does not know an answer?', 'The intended behavior is to acknowledge uncertainty and offer a human handoff. Try the price question in the scripted assistant demo to see this behavior.'],
   ['Is my business data separated from other companies?', 'Workspace data uses tenant identifiers, row-level security and role-aware database commands. Executable isolation tests cover memberships, profiles and cross-workspace access.'],
-  ['Which businesses can use LeadFlow?', 'The initial focus is Kenyan real-estate teams. Configurable qualification and workflows are designed to support other SMEs; try the industry examples above.'],
+  ['Which businesses and platforms can use LeadFlow?', 'LeadFlow includes editable playbooks for real estate, automotive, healthcare, education, finance, insurance, legal, logistics, travel, hospitality, retail, construction, home services, SaaS, agencies, recruitment, nonprofits and custom businesses. Native channels are clearly marked; other platforms connect through a secure inbound source, webhook, Zapier, Make, n8n or custom server while preserving source attribution.'],
   ['Can I cancel my subscription?', 'No payment or subscription is created by this preview. Published prices are proposed monthly plans; cancellation and billing terms will be available before paid subscriptions launch.'],
   ['Do I need technical knowledge?', 'The workspace is designed for business teams. Production channel setup may require help from an administrator or implementation partner. You can explore the demo without credentials.'],
 ]
 export const demoLeads = [
-  { name:'James Mwangi', interest:'3-bedroom apartment · Kilimani', source:'Website', stage:'Qualified', score:86, value:'KSh 18–22M', owner:'Sarah' },
-  { name:'Aisha Njeri', interest:'Townhouse · Lavington', source:'WhatsApp', stage:'Contacted', score:72, value:'KSh 28M', owner:'Sarah' },
-  { name:'Brian Otieno', interest:'Serviced apartment · Westlands', source:'Referral', stage:'Won', score:80, value:'KSh 12M', owner:'David' },
-  { name:'Wanjiku Kamau', interest:'Office space · Nairobi', source:'Email', stage:'New', score:45, value:'Not set', owner:'Unassigned' },
+  { name:'James Mwangi', interest:'SaaS CRM · 25-person team', source:'Website', stage:'Qualified', score:86, value:'KSh 1.2M', owner:'Sarah' },
+  { name:'Aisha Njeri', interest:'Fleet insurance · 12 vehicles', source:'WhatsApp', stage:'Contacted', score:72, value:'KSh 480K', owner:'Sarah' },
+  { name:'Brian Otieno', interest:'Cross-border logistics contract', source:'Referral', stage:'Won', score:80, value:'KSh 2.4M', owner:'David' },
+  { name:'Wanjiku Kamau', interest:'Executive recruitment brief', source:'Email', stage:'New', score:45, value:'Not set', owner:'Unassigned' },
 ]

@@ -15,7 +15,7 @@ type AutomationStep = { id:string; automation_id:string; organization_id:string;
 type AutomationRun = { id:string; organization_id:string; automation_id:string; lead_id:string|null; status:'RUNNING'|'SUCCEEDED'|'FAILED'|'SKIPPED'; trigger_event:string; input:Json; output:Json; error_code:string|null; attempt:number; max_attempts:number; next_retry_at:string|null; retry_of:string|null; started_at:string; finished_at:string|null }
 type Notification = { id:string; organization_id:string; user_id:string; kind:string; title:string; body:string|null; read_at:string|null; created_at:string }
 type Subscription = { id:string; organization_id:string; plan:'STARTER'|'GROWTH'|'PRO'; status:'TRIALING'|'ACTIVE'|'PAST_DUE'|'CANCELLED'|'INCOMPLETE'; billing_interval:'MONTHLY'|'YEARLY'; provider:string|null; provider_customer_id:string|null; provider_subscription_id:string|null; trial_ends_at:string|null; current_period_ends_at:string|null; created_at:string; updated_at:string }
-type Conversation = { id:string; organization_id:string; contact_id:string|null; channel:'WEBSITE'|'WHATSAPP'|'EMAIL'|'API'; status:'OPEN'|'CLOSED'|'SNOOZED'; assigned_to:string|null; last_message_at:string|null; created_at:string; updated_at:string }
+type Conversation = { id:string; organization_id:string; contact_id:string|null; channel:'WEBSITE'|'WHATSAPP'|'EMAIL'|'PHONE'|'SMS'|'INSTAGRAM'|'FACEBOOK'|'MESSENGER'|'LINKEDIN'|'TIKTOK'|'TELEGRAM'|'MARKETPLACE'|'API'|'OTHER'; status:'OPEN'|'CLOSED'|'SNOOZED'; assigned_to:string|null; last_message_at:string|null; created_at:string; updated_at:string }
 type Message = { id:string; organization_id:string; conversation_id:string; sender_type:'CUSTOMER'|'AI'|'HUMAN'|'SYSTEM'; sender_id:string|null; body:string; external_id:string|null; created_at:string }
 type ConversationRead = { organization_id:string; conversation_id:string; user_id:string; last_read_at:string }
 type KnowledgeItem = { id:string; organization_id:string; title:string; item_type:'FAQ'|'PRODUCT'|'SERVICE'|'POLICY'|'GENERAL'|'DOCUMENT'; content:string; status:'ACTIVE'|'DRAFT'|'ARCHIVED'; metadata:Json; created_at:string; updated_at:string }
@@ -26,6 +26,7 @@ type WebhookDelivery = { id:string; organization_id:string; endpoint_id:string; 
 type WidgetConfig = { organization_id:string; public_key:string; enabled:boolean; brand_name:string; welcome_message:string; primary_color:string; allowed_origins:string[]; updated_at:string }
 type NotificationPreference = { organization_id:string; user_id:string; in_app:boolean; email_qualified_lead:boolean; email_assignment:boolean; email_follow_up:boolean; email_automation_failure:boolean; email_integration_failure:boolean; updated_at:string }
 type PlanLimit = { plan:'STARTER'|'GROWTH'|'PRO'; members:number; monthly_leads:number; active_automations:number; knowledge_items:number }
+type LeadSource = { id:string; organization_id:string; name:string; platform:string; status:'ACTIVE'|'PAUSED'; secret_hash:string; created_by:string|null; last_received_at:string|null; created_at:string; updated_at:string }
 
 type Table<Row, Insert = Partial<Row>, Update = Partial<Insert>> = { Row:Row; Insert:Insert; Update:Update; Relationships:[] }
 
@@ -56,6 +57,7 @@ export interface Database {
       widget_configs: Table<WidgetConfig, Pick<WidgetConfig,'organization_id'> & Partial<WidgetConfig>>
       notification_preferences: Table<NotificationPreference, Pick<NotificationPreference,'organization_id'|'user_id'> & Partial<NotificationPreference>>
       plan_limits: Table<PlanLimit,PlanLimit>
+      lead_sources: Table<LeadSource,Pick<LeadSource,'organization_id'|'name'|'platform'|'secret_hash'> & Partial<LeadSource>>
     }
     Views: Record<string, never>
     Functions: {
@@ -78,6 +80,8 @@ export interface Database {
       create_automation_workflow_v3: { Args:{ target_org:string; workflow_name:string; workflow_trigger:string; workflow_conditions:Json; workflow_actions:Json }; Returns:Automation }
       delete_automation_workflow: { Args:{ target_org:string; target_automation:string }; Returns:undefined }
       delete_organization: { Args:{ target_org:string; confirmation:string }; Returns:undefined }
+      create_lead_source: { Args:{ target_org:string; source_name:string; source_platform:string }; Returns:Json }
+      rotate_lead_source_key: { Args:{ target_org:string; target_source:string }; Returns:string }
     }
     Enums: { member_role:MemberRole; lead_stage:DatabaseLeadStage }
     CompositeTypes: Record<string, never>
@@ -104,5 +108,6 @@ export type IntegrationRow = Integration
 export type WebhookEndpointRow = WebhookEndpoint
 export type WebhookDeliveryRow = WebhookDelivery
 export type WidgetConfigRow = WidgetConfig
+export type LeadSourceRow = LeadSource
 export type NotificationPreferenceRow = NotificationPreference
 export type PlanLimitRow = PlanLimit
