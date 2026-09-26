@@ -23,6 +23,13 @@
 .app .attention small,
 .app small { font-size: 11px; }
 .app :is(input,textarea,select,label) { font-size: 14px; }
+.app .main,
+.app .content,
+.app .automation-layout,
+.app .automation-builder,
+.app .automation-side,
+.app .automation-catalog { min-width: 0; }
+.app .content { overflow-x: clip; }
 
 /* Selected pages use color and weight without the inset glow shown in the old sidebar. */
 .app .nav-item.active,
@@ -63,9 +70,57 @@
 .lf-site :is(.lf-kicker,.lf-fine,small),
 .public-site :is(.lf-kicker,small) { font-size: 11.5px; }
 
+/* Stable team roster proportions on wide and narrow screens. */
+.app .team-list { width:100%; max-width:980px; }
+.app .team-row { display:grid; grid-template-columns:40px minmax(0,1fr) minmax(130px,160px) auto; align-items:center; gap:12px; }
+.app .team-row > div { min-width:0; }
+.app .team-row strong,
+.app .team-row small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.app .team-row select { width:100%; min-width:0; }
+
+/* Tabs scroll inside their own control instead of widening the whole page. */
+.app .automation-tabs { width:100%; max-width:650px; overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+.app .automation-tabs::-webkit-scrollbar { display:none; }
+.app .automation-tabs button { flex:1 0 auto; min-width:max-content; white-space:nowrap; }
+.app .automation-live-note > div { min-width:0; }
+.app .automation-live-note p { overflow-wrap:anywhere; }
+
+.mobile-drawer-close { display:none; }
+
 @media(max-width:720px){
   .app .page-heading h1,.app .empty-page h1{font-size:29px}
   .performance-card{min-height:330px}
   .performance-plot{height:190px}
   .performance-chart-summary{gap:12px;flex-wrap:wrap}
+  .app .topbar{padding-inline:12px}
+  .app .top-actions{gap:3px;min-width:0}
+  .app .search{width:38px;min-width:38px;padding:5px;font-size:0}
+  .app .search span{margin:0;font-size:20px}
+  .app .search kbd{display:none}
+  .app .icon-btn{padding:4px}
+  .app .content{width:100%;padding:22px 14px}
+  .app .sidebar.mobile-open{height:100dvh;max-height:100dvh;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;padding-bottom:max(18px,env(safe-area-inset-bottom))}
+  .app .sidebar.mobile-open nav{flex:0 0 auto}
+  .app .sidebar.mobile-open .sidebar-bottom{margin-top:20px;flex:0 0 auto}
+  .app .sidebar.mobile-open .brand{position:sticky;top:-24px;z-index:2;margin-top:-24px;padding-top:24px;background:inherit}
+  .mobile-drawer-close{display:grid;margin-left:auto;width:34px;height:34px;place-items:center;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font-size:22px}
+  .app .inbox-layout{display:grid;grid-template-columns:minmax(0,1fr);overflow:visible}
+  .app .conversation-list{display:block;max-height:285px;overflow-y:auto;overscroll-behavior:contain;border-right:0;border-bottom:1px solid var(--line)}
+  .app .conversation-main{min-width:0;min-height:500px}
+  .app .conversation-head{position:sticky;top:0;z-index:2;background:var(--card)}
+  .app .composer-input{min-width:0}
+  .app .composer-input textarea{min-width:0}
+  .app .automation-tabs{max-width:100%;margin-inline:0}
+  .app .automation-tabs button{padding:10px 12px;font-size:13px}
+  .app .automation-live-note{align-items:flex-start;padding:13px}
+  .app .automation-live-note>span{flex:0 0 30px}
+  .app .team-list{max-width:none;padding:14px}
+  .app .team-row{grid-template-columns:40px minmax(0,1fr);gap:10px;padding:14px 0}
+  .app .team-row>select,.app .team-row>.role-pill,.app .team-row>.text-btn{grid-column:2;width:100%;justify-self:stretch;text-align:left}
+}
+
+@media(max-width:420px){
+  .app .automation-tabs button{padding-inline:10px;font-size:12px}
+  .app .conversation-list{max-height:250px}
+  .app .team-invite{padding:16px}
 }

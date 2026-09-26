@@ -117,6 +117,12 @@ function App() {
     document.addEventListener('keydown', shortcut)
     return () => document.removeEventListener('keydown', shortcut)
   }, [dark])
+  useEffect(()=>{
+    if(!mobileNavOpen)return
+    const previousOverflow=document.body.style.overflow
+    document.body.style.overflow='hidden'
+    return()=>{document.body.style.overflow=previousOverflow}
+  },[mobileNavOpen])
   useEffect(()=>{const token=new URLSearchParams(window.location.search).get('invite');if(!liveMode||!auth.user||!token)return;void acceptInvitation(token).then(()=>{history.replaceState({},'',`${location.pathname}#app`);void organizationState.refresh();notify('Invitation accepted')}).catch(reason=>notify(reason instanceof Error?reason.message:'Unable to accept invitation'))},[auth.user,liveMode,organizationState.refresh])
 
   if(publicPath)return <PublicPage path={publicPath}/>
@@ -136,8 +142,8 @@ function App() {
 
   return <div className={dark ? 'app dark' : 'app'}>
     {mobileNavOpen && <button className="mobile-nav-backdrop" aria-label="Close navigation" onClick={() => setMobileNavOpen(false)} />}
-    <aside className={mobileNavOpen ? 'sidebar mobile-open' : 'sidebar'}>
-      <div className="brand"><div className="brand-mark">N</div><div><strong>Nexara</strong><span>LeadFlow</span></div></div>
+    <aside className={mobileNavOpen ? 'sidebar mobile-open' : 'sidebar'} aria-label="Workspace navigation">
+      <div className="brand"><div className="brand-mark">N</div><div><strong>Nexara</strong><span>LeadFlow</span></div><button className="mobile-drawer-close" aria-label="Close navigation" onClick={()=>setMobileNavOpen(false)}>×</button></div>
       <div className="workspace"><div className="workspace-avatar">{organizationName[0]}</div><div><strong>{organizationName}</strong><span>{demoMode?'Demo workspace':organizationState.activeOrganization?.role.toLowerCase()}</span></div></div>
       <p className="nav-label">Workspace</p>
       <nav>{nav.map((item) => <button className={active === item ? 'nav-item active' : 'nav-item'} onClick={() => openModule(item)} key={item}><span className="nav-icon">{icon(item)}</span>{item}</button>)}</nav>
